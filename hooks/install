@@ -1,0 +1,20 @@
+#!/usr/bin/python
+from charmhelpers import fetch
+
+import setup
+
+setup.pre_install()
+
+from charmhelpers.core import hookenv
+
+
+def install():
+    hookenv.log('Installing ceph-metrics-collector')
+    fetch.configure_sources(sources_var='deb http://packages.elasticsearch.org/logstash/1.5/debian stable main',
+                            keys_var='http://packages.elasticsearch.org/GPG-KEY-elasticsearc')
+    fetch.apt_update()
+    fetch.apt_install(fetch.filter_installed_packages(['collectd', 'collectd-utils', 'logstash', 'libpcap-dev']))
+
+
+if __name__ == "__main__":
+    install()

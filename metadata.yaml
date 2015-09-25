@@ -1,0 +1,15 @@
+name: ceph-metrics-collector
+summary: Collect all the statistics that are important for Ceph
+maintainer: chris.holcombe@canonical.com
+description: |
+  A utility to export a variety of metrics from a running ceph server. This charm is a subordinate of the
+  ceph charm.
+tags:
+  - misc
+subordinate: true
+requires:
+  ceph:
+    interface: ceph
+    scope: container
+  requires-relation:
+    interface: elasticsearch
