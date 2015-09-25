@@ -8,8 +8,11 @@ tags:
   - misc
 subordinate: true
 requires:
-  ceph:
-    interface: ceph
+  ceph-cephdash:
+    interface: client
     scope: container
+  juju-info:
+   interface: juju-info
+   scope: container
   requires-relation:
     interface: elasticsearch
