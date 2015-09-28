@@ -18,11 +18,12 @@ hooks = Hooks()
 def config_changed():
     pass
 
+
 # Find the network interfaces to listen on based on the ceph.conf info
 def find_interfaces():
     # 1. Is this machine running an OSD?
     # 2. What interface is it listening on?
-    listen_interfaces = []
+    interfaces_to_listen_on = []
     interfaces = netifaces.interfaces()
     osd_dump = subprocess.check_output(['ceph', 'osd', 'dump', '--format', 'json'])
     try:
@@ -44,18 +45,22 @@ def find_interfaces():
                     interface_ip_info = netifaces.ifaddresses(i)[netifaces.AF_INET]
                     log('interface ip info: ' + str(interface_ip_info))
                     # If the OSD addr == the addr we own then add that to the listening list
-                    if interface_ip_info is addr:
-                        listen_interfaces.append(i)
+                    if interface_ip_info[0]['addr'] is addr:
+                        interfaces_to_listen_on.append(i)
+                return interfaces_to_listen_on
             except KeyError:
                 # I don't care about interfaces that don't have IP info on them
                 pass
     except ValueError as err:
         log('Unable to decode json from ceph.  Error is: ' + err.message)
 
+
 @hooks.hook('start')
 def start():
     working_dir = os.getcwd()
     log('working dir: ' + str(working_dir))
+    listen_interfaces = find_interfaces()
+    log('Found listen interfaces: ' + str(listen_interfaces))
     proc = subprocess.Popen(["hooks/decode_ceph", "-i", "eth0"], shell=True, cwd=working_dir)
     # Write pid to /var/run/decode_ceph
     with open('/var/run/decode_ceph', 'w+') as pid_file:
@@ -70,10 +75,13 @@ def stop():
         pid_id = int(pid[0].strip())
         assert isinstance(pid_id, int)
 
-        os.kill(pid_id, signal.SIGTERM)
-        time.sleep(5)
-        # It should exit quickly but if it doesn't
-        os.kill(pid_id, signal.SIGKILL)
+        try:
+            os.kill(pid_id, signal.SIGTERM)
+            time.sleep(5)
+            # It should exit quickly but if it doesn't
+            os.kill(pid_id, signal.SIGKILL)
+        except OSError as err:
+            log('Unable to find decode_ceph process: ' + err.message)
 
 
 def restart_collectors():
@@ -90,8 +98,6 @@ def elasticsearch_relation_changed():
 
 
 if __name__ == '__main__':
-    listen_interfaces = find_interfaces()
-    log('Found listen interfaces: ' + str(listen_interfaces))
     try:
         hooks.execute(sys.argv)
     except UnregisteredHookError as e:
