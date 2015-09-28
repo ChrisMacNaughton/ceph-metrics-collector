@@ -8,7 +8,7 @@ tags:
   - misc
 subordinate: true
 requires:
-  ceph-cephdash:
+  ceph:
     interface: client
     scope: container
   juju-info:
