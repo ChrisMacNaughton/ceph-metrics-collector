@@ -45,8 +45,13 @@ def find_interfaces():
                     interface_ip_info = netifaces.ifaddresses(i)[netifaces.AF_INET]
                     log('interface ip info: ' + str(interface_ip_info))
                     # If the OSD addr == the addr we own then add that to the listening list
-                    if interface_ip_info[0]['addr'] is addr:
-                        interfaces_to_listen_on.append(i)
+                    log('comparing {} to {}'.format(interface_ip_info[0]['addr'], addr))
+                    if len(interface_ip_info) > 0:
+                        if interface_ip_info[0]['addr'].strip() == addr.strip():
+                            interfaces_to_listen_on.append(i)
+                            log('Found a match for {} on interface {}'.format(addr, i))
+                    else:
+                        log('Skipping invalid interface {}'.format(interface_ip_info))
             except KeyError:
                 # I don't care about interfaces that don't have IP info on them
                 pass
