@@ -47,10 +47,10 @@ def find_interfaces():
                     # If the OSD addr == the addr we own then add that to the listening list
                     if interface_ip_info[0]['addr'] is addr:
                         interfaces_to_listen_on.append(i)
-                return interfaces_to_listen_on
             except KeyError:
                 # I don't care about interfaces that don't have IP info on them
                 pass
+        return interfaces_to_listen_on
     except ValueError as err:
         log('Unable to decode json from ceph.  Error is: ' + err.message)
 
