@@ -2,11 +2,13 @@
 import setup
 
 setup.pre_install()
-import os
-import subprocess
 from charmhelpers.core.hookenv import Hooks, UnregisteredHookError, log, relation_get, related_units
+import json
+import netifaces
+import os
 import sys
 import signal
+import subprocess
 import time
 
 hooks = Hooks()
@@ -16,6 +18,39 @@ hooks = Hooks()
 def config_changed():
     pass
 
+# Find the network interfaces to listen on based on the ceph.conf info
+def find_interfaces():
+    # 1. Is this machine running an OSD?
+    # 2. What interface is it listening on?
+    listen_interfaces = []
+    interfaces = netifaces.interfaces()
+    osd_dump = subprocess.check_output(['ceph', 'osd', 'dump', '--format', 'json'])
+    try:
+        osd_json = json.loads(osd_dump)
+        for osd in osd_json['osds']:
+            public_addr = osd['public_addr']
+            log('OSD public addr: ' + str(public_addr))
+            # Example ipv4 output: 10.0.3.213:6800/10784
+            parts = public_addr.rstrip().split(':')
+            if len(parts) != 2:
+                log('Unable to decipher the ip address of the osd from: ' + public_addr)
+                return -1
+            addr = parts[0]
+            log('OSD addr: ' + str(addr))
+            # For each interface check to see if the IP addr matches an OSD ip addr.
+            # If it does then we'll save it so that we can listen on that addr
+            try:
+                for i in interfaces:
+                    interface_ip_info = netifaces.ifaddresses(i)[netifaces.AF_INET]
+                    log('interface ip info: ' + str(interface_ip_info))
+                    # If the OSD addr == the addr we own then add that to the listening list
+                    if interface_ip_info is addr:
+                        listen_interfaces.append(i)
+            except KeyError:
+                # I don't care about interfaces that don't have IP info on them
+                pass
+    except ValueError as err:
+        log('Unable to decode json from ceph.  Error is: ' + err.message)
 
 @hooks.hook('start')
 def start():
@@ -55,6 +90,8 @@ def elasticsearch_relation_changed():
 
 
 if __name__ == '__main__':
+    listen_interfaces = find_interfaces()
+    log('Found listen interfaces: ' + str(listen_interfaces))
     try:
         hooks.execute(sys.argv)
     except UnregisteredHookError as e:
