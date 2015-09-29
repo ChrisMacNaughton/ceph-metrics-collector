@@ -1,10 +1,10 @@
 #!/usr/bin/python
 import glob
+
 import setup
 
 setup.pre_install()
-from charmhelpers.core.hookenv import Hooks, UnregisteredHookError, log, relation_get, related_units, status_set
-import json
+from charmhelpers.core.hookenv import Hooks, UnregisteredHookError, log, relation_get, related_units
 import netifaces
 import os
 import sys
@@ -20,62 +20,26 @@ def config_changed():
     restart()
 
 
-# Find the network interfaces to listen on based on the ceph.conf info
-def find_interfaces():
-    # 1. Is this machine running an OSD?
-    # 2. What interface is it listening on?
-    interfaces_to_listen_on = []
-    interfaces = netifaces.interfaces()
-    try:
-        status_set('maintenance', 'Gathering OSD information')
-        osd_dump = subprocess.check_output(['ceph', 'osd', 'dump', '--format', 'json'])
-        try:
-            osd_json = json.loads(osd_dump)
-            for osd in osd_json['osds']:
-                public_addr = osd['public_addr']
-                # Example ipv4 output: 10.0.3.213:6800/10784
-                parts = public_addr.rstrip().split(':')
-                if len(parts) != 2:
-                    log('Unable to decipher the ip address of the osd from: ' + public_addr)
-                    return -1
-                addr = parts[0]
-                # For each interface check to see if the IP addr matches an OSD ip addr.
-                # If it does then we'll save it so that we can listen on that addr
-                try:
-                    for i in interfaces:
-                        interface_ip_info = netifaces.ifaddresses(i)[netifaces.AF_INET]
-                        # If the OSD addr == the addr we own then add that to the listening list
-                        if len(interface_ip_info) > 0:
-                            if interface_ip_info[0]['addr'].strip() == addr.strip():
-                                interfaces_to_listen_on.append(i)
-                        else:
-                            log('Skipping invalid interface {}'.format(interface_ip_info))
-                except KeyError:
-                    # I don't care about interfaces that don't have IP info on them
-                    pass
-            return interfaces_to_listen_on
-        except ValueError as err:
-            log('Unable to decode json from ceph.  Error is: ' + err.message)
-    except subprocess.CalledProcessError:
-        # Ceph is prob not operational yet.
-        status_set('maintenance', 'Failed to gather OSD info.  Waiting on Ceph to start')
-
-
 @hooks.hook('start')
 def start():
     working_dir = os.getcwd()
-    listen_interfaces = find_interfaces()
-    log('Found listen interfaces: ' + str(listen_interfaces))
+    interfaces = netifaces.interfaces()
 
+    '''
     if listen_interfaces is None:
         status_set('maintenance', 'Failed to find interfaces. Waiting on Ceph to start')
         return
 
     status_set('maintenance', 'Starting Ceph listener')
-    for interface in listen_interfaces:
+    '''
+    for interface in interfaces:
+        if interface == 'lo':
+            # Skip loopback
+            continue
         try:
-            process = subprocess.Popen(["hooks/decode_ceph", "-i", interface],
-                                       shell=True, cwd=working_dir)
+            process = subprocess.Popen("hooks/decode_ceph -i {} 2>&1 > decode_ceph.out".format(interface),
+                                       shell=True, cwd=working_dir, stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
             # Write pid to /var/run/decode_ceph
             try:
                 with open('/var/run/decode_ceph' + interface, 'w+') as pid_file:
