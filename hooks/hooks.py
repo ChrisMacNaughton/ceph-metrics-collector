@@ -1,16 +1,11 @@
 #!/usr/bin/python
-import glob
 
 import setup
 
 setup.pre_install()
 from charmhelpers.core.hookenv import Hooks, UnregisteredHookError, log, relation_get, related_units
-import netifaces
-import os
 import sys
-import signal
 import subprocess
-import time
 
 hooks = Hooks()
 
@@ -22,64 +17,30 @@ def config_changed():
 
 @hooks.hook('start')
 def start():
-    working_dir = os.getcwd()
-    interfaces = netifaces.interfaces()
-
-    '''
-    if listen_interfaces is None:
-        status_set('maintenance', 'Failed to find interfaces. Waiting on Ceph to start')
-        return
-
-    status_set('maintenance', 'Starting Ceph listener')
-    '''
-    for interface in interfaces:
-        if interface == 'lo':
-            # Skip loopback
-            continue
-        try:
-            process = subprocess.Popen("hooks/decode_ceph -i {} 2>&1 > decode_ceph.out".format(interface),
-                                       shell=True, cwd=working_dir, stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
-            # Write pid to /var/run/decode_ceph
-            try:
-                with open('/var/run/decode_ceph' + interface, 'w+') as pid_file:
-                    pid_file.write(str(process.pid))
-            except IOError as err:
-                log('Unable to write pid file for ceph interface: {}.  Error: {}'.format(
-                    interface, err.message))
-        except subprocess.CalledProcessError:
-            # todo: log levels should be an enum
-            log('Unable to find pid file for listener on interface {}'.format(interface),
-                level='INFO')
+    try:
+        subprocess.check_call(['service', 'decode_ceph', 'start'])
+    except subprocess.CalledProcessError as err:
+        # todo: log levels should be an enum
+        log('Service decode_ceph start failed with return code: {}'.format(err.returncode),
+            level='INFO')
 
 
 @hooks.hook('stop')
 def stop():
     # Find all started listener processes
-    results = glob.glob('/var/run/decode_ceph*')
-    for path in results:
-        try:
-            with open(path, 'r') as pid_file:
-                pid = pid_file.readlines()
-                # Give a chance to stop nicely
-                pid_id = int(pid[0].strip())
-                assert isinstance(pid_id, int)
-
-                try:
-                    os.kill(pid_id, signal.SIGTERM)
-                    time.sleep(5)
-                    # It should exit quickly but if it doesn't
-                    os.kill(pid_id, signal.SIGKILL)
-                except OSError as err:
-                    log('Unable to kill decode_ceph process: ' + err.message)
-        except IOError as err:
-            log('Unable to open pid file for ceph listener: {}.  Error: {}'.format(
-                path, err.message))
+    try:
+        subprocess.check_call(['service', 'decode_ceph', 'stop'])
+    except subprocess.CalledProcessError as err:
+        log('Service decode_ceph start failed with return code: {}'.format(err.returncode),
+            level='INFO')
 
 
 def restart():
-    stop()
-    start()
+    try:
+        subprocess.check_call(['service', 'decode_ceph', 'restart'])
+    except subprocess.CalledProcessError as err:
+        log('Service decode_ceph start failed with return code: {}'.format(err.returncode),
+            level='INFO')
 
 
 @hooks.hook('elasticsearch-relation-changed')
