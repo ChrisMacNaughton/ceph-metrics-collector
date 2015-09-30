@@ -3,6 +3,9 @@ import os
 import shutil
 
 import setup
+import os
+import os.path
+import shutil
 
 setup.pre_install()
 
@@ -11,7 +14,7 @@ from charmhelpers.core import hookenv
 from charmhelpers.core.hookenv import service_name, log
 from charmhelpers.core.host import mkdir
 from charmhelpers.core.templating import render
-
+from charmhelpers.core.host import mkdir
 
 def setup_upstart_job():
     working_dir = os.getcwd()
@@ -24,6 +27,7 @@ def setup_upstart_job():
     shutil.copy(charm_upstart_conf, '/etc/init/decode_ceph.conf')
 
 
+
 def install():
     hookenv.log('Installing ceph-metrics-collector')
     fetch.add_source(source='deb http://packages.elasticsearch.org/logstash/1.5/debian stable main',
@@ -32,7 +36,18 @@ def install():
     fetch.apt_install(fetch.filter_installed_packages(
         ['collectd', 'collectd-utils', 'logstash', 'libpcap-dev', 'python-netifaces']))
     setup_upstart_job()
+    setup_logstash()
 
+def setup_logstash():
+    if not os.path.exists("/opt/logstash/patterns"):
+        mkdir("/opt/logstash/patterns")
+    src = os.path.join(hookenv.charm_dir(), "files", "ceph")
+    dest = "/opt/logstash/patterns/ceph"
+    shutil.copyfile(src, dest)
+
+    src = os.path.join(hookenv.charm_dir(), "files", "ceph_es.conf")
+    dest = "/etc/logstash/conf.d/01-ceph.conf"
+    shutil.copyfile(src, dest)
 
 if __name__ == "__main__":
     install()
