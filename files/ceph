@@ -1,0 +1,8 @@
+CEPH_HEADER %{TIMESTAMP_ISO8601}\s%{BASE16FLOAT:osd_epoch}\s+%{NUMBER:error_bool}
+CEPH_PGMAP_DETAIL_ACTIVE_CLEAN %{NONNEGINT:active_clean} active\+clean
+CEPH_PGMAP_DETAIL_REST %{NONNEGINT} (?:[^ ,;]+)
+CEPH_PGMAP_DETAIL (?:%{CEPH_PGMAP_DETAIL_ACTIVE_CLEAN}|%{CEPH_PGMAP_DETAIL_REST})
+CEPH_BYTES %{NONNEGINT} (?:(?:k|M|G|T|P)?B|bytes)
+CEPH_PGMAP_VOLUME %{CEPH_BYTES:volumedata} data, %{CEPH_BYTES:volumeused} used, %{CEPH_BYTES:volumeavail} / %{CEPH_BYTES:volumetotal} avail
+CEPH_PGMAP .*? pgmap v(?<pgmapv>[0-9]+): %{NONNEGINT:pgs} pgs: (?:%{CEPH_PGMAP_DETAIL})(?:; %{CEPH_PGMAP_VOLUME})
+CEPH_MSG %{CEPH_HEADER}(?:%{CEPH_PGMAP})
