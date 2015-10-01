@@ -52,8 +52,8 @@ def restart():
             level='INFO')
 
 
-@hooks.hook('requires-relation-relation-changed')
-def requires_relation_relation_changed():
+@hooks.hook('elasticsearch-relation-changed')
+def elasticsearch_relation_changed():
     cluster_name = relation_get('cluster-name')
     es_host_list = []
     for member in related_units():

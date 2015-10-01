@@ -14,5 +14,5 @@ requires:
   juju-info:
     interface: juju-info
     scope: container
-  requires-relation:
+  elasticsearch:
     interface: elasticsearch
