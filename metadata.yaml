@@ -12,7 +12,7 @@ requires:
     interface: client
     scope: container
   juju-info:
-   interface: juju-info
-   scope: container
-  requires-relation:
+    interface: juju-info
+    scope: container
+  elasticsearch:
     interface: elasticsearch
