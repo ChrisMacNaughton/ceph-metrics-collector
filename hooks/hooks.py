@@ -11,15 +11,47 @@ import os
 import sys
 import subprocess
 from Cheetah.Template import Template
+from yaml import load, dump
+
+try:
+    from yaml import CLoader as Loader, CDumper as Dumper
+except ImportError:
+    from yaml import Loader, Dumper
 
 hooks = Hooks()
 
 
-def jujuHeader():
+def juju_header():
     header = ("#-------------------------------------------------#\n"
               "# This file is Juju managed - do not edit by hand #\n"
               "#-------------------------------------------------#\n")
     return header
+
+
+def update_service_config(option_list):
+    assert isinstance(option_list, list)
+    try:
+        with open('/etc/decode.conf', 'r+') as config:
+            try:
+                data = load(config, Loader=Loader)
+                if 'outputs' in data:
+                    output_list = data['outputs']
+                    new_options = list(set(output_list) - set(option_list))
+                    config.write(
+                        dump(data={"outputs": new_options}, Dumper=Dumper))
+                else:
+                    # outputs is missing.  Overwrite it
+                    config.write(
+                        dump(data={"outputs": option_list}, Dumper=Dumper))
+
+            except SyntaxError as err:
+                # Yaml config file is screwed up.  Write out a fresh one.  We could lose options here by accident
+                # Todo: this should really utilize a tmp file + mv to ensure atomic file operation in case of crashes
+                log('Invalid syntax found in /etc/decode.conf.  Overwriting with new file. ' + err.message)
+                config.write(
+                    dump(data={"outputs": option_list}, Dumper=Dumper))
+    except IOError as err:
+        log("Unable to locate /etc/decode.conf. " + err.message)
 
 
 @hooks.hook('config-changed')
@@ -88,10 +120,12 @@ def elasticsearch_relation_changed():
         es_host_list.append(relation_get('private-address', member))
     add_elasticsearch_to_logstash(es_host_list)
     setup_ceph_index(es_host_list)
+    update_service_config(['elasticsearch'])
     try:
         service_restart('logstash')
+        service_restart('decode_ceph')
     except subprocess.CalledProcessError as err:
-        log('logstash service restart failed with err: ' + err.message)
+        log('Service restart failed with err: ' + err.message)
 
 
 def add_elasticsearch_to_logstash(elasticsearch_servers):
@@ -101,10 +135,15 @@ def add_elasticsearch_to_logstash(elasticsearch_servers):
         t = Template(file=template_file, searchList=tmpl_data)
         with open("/etc/logstash/conf.d/elasticsearch.conf", "w") as f:
             os.chmod("/etc/logstash/conf.d/elasticsearch.conf", 0644)
-            f.write(jujuHeader())
+            f.write(juju_header())
             f.write(str(t))
     else:
         log("No elasticsearch servers found?")
+
+
+@hooks.hook('carbon-relation-changed')
+def carbon_relation_changed():
+    pass
 
 
 if __name__ == '__main__':
