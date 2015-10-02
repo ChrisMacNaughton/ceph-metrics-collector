@@ -1,18 +1,16 @@
 #!/usr/bin/python
-import os
-import shutil
 
-import setup
 import os
 import os.path
 import shutil
+
+import setup
 
 setup.pre_install()
 
 from charmhelpers import fetch
 from charmhelpers.core import hookenv
 from charmhelpers.core.hookenv import service_name, log
-from charmhelpers.core.host import mkdir
 from charmhelpers.core.templating import render
 from charmhelpers.core.host import mkdir
 

@@ -1,0 +1,31 @@
+{
+    "operations": {
+        "properties": {
+            "dst_ip": {
+                "type": "string"
+            },
+            "enabled": {
+                "type": "boolean"
+            },
+            "operation": {
+                "type": "string"
+            },
+            "operation_count": {
+                "type": "long"
+            },
+            "postDate": {
+                "type": "date",
+                "doc_values": true
+            },
+            "size": {
+                "type": "long"
+            },
+            "src_ip": {
+                "type": "string"
+            },
+            "timestamp": {
+                "type": "long"
+            }
+        }
+    }
+}
