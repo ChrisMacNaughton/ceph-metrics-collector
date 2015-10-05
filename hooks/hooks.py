@@ -34,7 +34,6 @@ def write_config(outputs_list, service_dict):
     data = {}
     data.update(service_dict)
     data['outputs'] = outputs_list
-    print data
 
     try:
         with open(config_file, 'w+') as config:

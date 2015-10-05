@@ -16,6 +16,7 @@ sys.path.append(resource_filename(__name__, '../hooks'))
 from hooks import update_service_config
 
 
+# Note this must run as root or it will fail to write the config file
 class TestHooks(unittest.TestCase):
     @mock.patch('charmhelpers.core.hookenv.log')
     def test_service_config(self, log):
