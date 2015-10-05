@@ -22,6 +22,7 @@ hooks = Hooks()
 
 config_file = '/etc/defaults/decode_ceph.yaml'
 
+
 def juju_header():
     header = ("#-------------------------------------------------#\n"
               "# This file is Juju managed - do not edit by hand #\n"
