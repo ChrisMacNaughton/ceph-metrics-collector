@@ -20,7 +20,7 @@ except ImportError:
 
 hooks = Hooks()
 
-config_file = '/etc/defaults/decode_ceph.yaml'
+config_file = '/etc/default/decode_ceph.yaml'
 
 
 def juju_header():
