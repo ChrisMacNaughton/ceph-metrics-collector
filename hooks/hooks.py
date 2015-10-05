@@ -34,6 +34,7 @@ def write_config(outputs_list, service_dict):
     data = {}
     data.update(service_dict)
     data['outputs'] = outputs_list
+    print data
 
     try:
         with open(config_file, 'w+') as config:
@@ -59,7 +60,8 @@ def update_service_config(option_list, service_dict):
                 data = load(config, Loader=Loader)
                 if 'outputs' in data:
                     output_list = data['outputs']
-                    new_options = list(set(output_list) - set(option_list))
+                    # Merge the lists
+                    new_options = list(set(option_list + output_list))
                     write_config(new_options, service_dict)
                 else:
                     # outputs is missing.  Overwrite it
@@ -139,7 +141,7 @@ def elasticsearch_relation_changed():
         es_host_list.append(relation_get('private-address', member))
     add_elasticsearch_to_logstash(es_host_list)
     setup_ceph_index(es_host_list)
-    update_service_config(option_list=['elasticsearch'], service_dict={'elasticsearch': es_host_list})
+    update_service_config(option_list=['elasticsearch'], service_dict={'elasticsearch': es_host_list.pop()})
     try:
         service_restart('logstash')
         service_restart('decode_ceph')
