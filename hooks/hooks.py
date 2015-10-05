@@ -138,14 +138,18 @@ def elasticsearch_relation_changed():
     es_host_list = []
     for member in related_units():
         es_host_list.append(relation_get('private-address', member))
-    add_elasticsearch_to_logstash(es_host_list)
-    setup_ceph_index(es_host_list)
-    update_service_config(option_list=['elasticsearch'], service_dict={'elasticsearch': es_host_list.pop()})
-    try:
-        service_restart('logstash')
-        service_restart('decode_ceph')
-    except subprocess.CalledProcessError as err:
-        log('Service restart failed with err: ' + err.message)
+    # Check the list length so pop doesn't fail
+    if len(es_host_list) > 0:
+        add_elasticsearch_to_logstash(es_host_list)
+        setup_ceph_index(es_host_list)
+        update_service_config(option_list=['elasticsearch'], service_dict={'elasticsearch': es_host_list.pop()})
+        try:
+            service_restart('logstash')
+            service_restart('decode_ceph')
+        except subprocess.CalledProcessError as err:
+            log('Service restart failed with err: ' + err.message)
+    else:
+        log('Unable to find elasticsearch related units')
 
 
 def add_elasticsearch_to_logstash(elasticsearch_servers):
