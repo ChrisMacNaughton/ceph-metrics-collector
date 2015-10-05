@@ -20,6 +20,7 @@ except ImportError:
 
 hooks = Hooks()
 
+config_file = '/etc/defaults/decode_ceph.yaml'
 
 def juju_header():
     header = ("#-------------------------------------------------#\n"
@@ -28,30 +29,47 @@ def juju_header():
     return header
 
 
-def update_service_config(option_list):
-    assert isinstance(option_list, list)
+def write_config(outputs_list, service_dict):
+    data = {}
+    data.update(service_dict)
+    data['outputs'] = outputs_list
+
     try:
-        with open('/etc/decode.conf', 'r+') as config:
+        with open(config_file, 'w+') as config:
+            config.write(
+                # {'elasticsearch': '127.0.0.7', 'outputs': ['elasticsearch', 'stdout'] }
+                dump(data=data, Dumper=Dumper))
+    except IOError as err:
+        log("IOError with {}:{}".format(config_file, err.message))
+
+
+# Expects a list of output types: ['stdout', 'elasticsearch', 'etc']
+# and also a dict of params for that service: {'elasticsearch': '127.0.0.1'}
+def update_service_config(option_list, service_dict):
+    assert isinstance(option_list, list)
+    assert isinstance(service_dict, dict)
+
+    # Write it out if the file doesn't exist
+    if not os.path.exists(config_file):
+        write_config(option_list, service_dict)
+    try:
+        with open(config_file, 'r+') as config:
             try:
                 data = load(config, Loader=Loader)
                 if 'outputs' in data:
                     output_list = data['outputs']
                     new_options = list(set(output_list) - set(option_list))
-                    config.write(
-                        dump(data={"outputs": new_options}, Dumper=Dumper))
+                    write_config(new_options, service_dict)
                 else:
                     # outputs is missing.  Overwrite it
-                    config.write(
-                        dump(data={"outputs": option_list}, Dumper=Dumper))
-
+                    write_config(option_list, service_dict)
             except SyntaxError as err:
                 # Yaml config file is screwed up.  Write out a fresh one.  We could lose options here by accident
                 # Todo: this should really utilize a tmp file + mv to ensure atomic file operation in case of crashes
                 log('Invalid syntax found in /etc/decode.conf.  Overwriting with new file. ' + err.message)
-                config.write(
-                    dump(data={"outputs": option_list}, Dumper=Dumper))
+                write_config(option_list, service_dict)
     except IOError as err:
-        log("Unable to locate /etc/decode.conf. " + err.message)
+        log("IOError with /etc/decode.conf. " + err.message)
 
 
 @hooks.hook('config-changed')
@@ -120,7 +138,7 @@ def elasticsearch_relation_changed():
         es_host_list.append(relation_get('private-address', member))
     add_elasticsearch_to_logstash(es_host_list)
     setup_ceph_index(es_host_list)
-    update_service_config(['elasticsearch'])
+    update_service_config(option_list=['elasticsearch'], service_dict={'elasticsearch': es_host_list})
     try:
         service_restart('logstash')
         service_restart('decode_ceph')
@@ -143,7 +161,12 @@ def add_elasticsearch_to_logstash(elasticsearch_servers):
 
 @hooks.hook('carbon-relation-changed')
 def carbon_relation_changed():
-    pass
+    carbon_server = related_units()
+    update_service_config(option_list=['carbon'], service_dict={'carbon': carbon_server})
+    try:
+        service_restart('decode_ceph')
+    except subprocess.CalledProcessError as err:
+        log('Service restart failed with err: ' + err.message)
 
 
 if __name__ == '__main__':
