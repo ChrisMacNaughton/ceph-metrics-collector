@@ -113,7 +113,7 @@ def setup_ceph_index(elasticsearch_servers):
     if is_leader():
         # Prevent everyone from trying the same thing
         # Check if the index exists first
-        server = elasticsearch_servers.pop()
+        server = elasticsearch_servers[0]  # save a reference to the first server
         result = requests.get("http://{}:9200/ceph".format(server))
         if result.status_code != requests.codes.ok:
             # Doesn't exist.  Lets create it
@@ -143,7 +143,7 @@ def elasticsearch_relation_changed():
     if len(es_host_list) > 0:
         add_elasticsearch_to_logstash(es_host_list)
         setup_ceph_index(es_host_list)
-        server = es_host_list.pop()
+        server = es_host_list[0]
         update_service_config(option_list=['elasticsearch'], service_dict={'elasticsearch': server + ":9200"})
         try:
             service_restart('logstash')
