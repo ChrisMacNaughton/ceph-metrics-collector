@@ -126,7 +126,7 @@ def setup_ceph_index(elasticsearch_servers):
 
         status_set('maintenance', 'Loading mapping for ceph index into elasticsearch')
         with open('files/elasticsearch_mapping.json', 'r') as payload:
-            response = requests.post("http://{}:9200/ceph/_mapping/operations".format(elasticsearch_servers[0]),
+            response = requests.post("http://{}:9200/ceph/_mapping/operations".format(server),
                                      data=payload)
             if response.status_code != requests.codes.ok:
                 # Try the next server in the cluster
@@ -143,7 +143,8 @@ def elasticsearch_relation_changed():
     if len(es_host_list) > 0:
         add_elasticsearch_to_logstash(es_host_list)
         setup_ceph_index(es_host_list)
-        update_service_config(option_list=['elasticsearch'], service_dict={'elasticsearch': es_host_list.pop() + ":9200"})
+        server = es_host_list.pop()
+        update_service_config(option_list=['elasticsearch'], service_dict={'elasticsearch': server + ":9200"})
         try:
             service_restart('logstash')
             service_restart('decode_ceph')
