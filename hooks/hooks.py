@@ -179,6 +179,6 @@ def carbon_relation_changed():
 if __name__ == '__main__':
     try:
         hooks.execute(sys.argv)
-        status_set('maintenance', '')
+        status_set('active', '')
     except UnregisteredHookError as e:
         log('Unknown hook {} - skipping.'.format(e))
