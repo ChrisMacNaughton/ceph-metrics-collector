@@ -5,7 +5,7 @@ import setup
 
 setup.pre_install()
 from charmhelpers.core.hookenv import Hooks, UnregisteredHookError, log, relation_get, related_units, charm_dir, \
-    status_set
+    status_set, is_leader
 from charmhelpers.core.host import service_restart
 import os
 import sys
@@ -110,8 +110,10 @@ def restart():
 # Add an index to Elasticsearch with an explicit mapping
 def setup_ceph_index(elasticsearch_servers):
     log('elastic servers' + str(elasticsearch_servers))
-    for server in elasticsearch_servers:
+    if is_leader():
+        # Prevent everyone from trying the same thing
         # Check if the index exists first
+        server = elasticsearch_servers.pop()
         result = requests.get("http://{}:9200/ceph".format(server))
         if result.status_code != requests.codes.ok:
             # Doesn't exist.  Lets create it
@@ -119,7 +121,7 @@ def setup_ceph_index(elasticsearch_servers):
             index_create = requests.put("http://{}:9200/ceph".format(server))
             if index_create.status_code != requests.codes.ok:
                 # Try the next server in the cluster
-                continue
+                log('Unable to create Ceph index on Elasticsearch', level='error')
             status_set('maintenance', '')
 
         status_set('maintenance', 'Loading mapping for ceph index into elasticsearch')
@@ -128,8 +130,7 @@ def setup_ceph_index(elasticsearch_servers):
                                      data=payload)
             if response.status_code != requests.codes.ok:
                 # Try the next server in the cluster
-                continue
-        break
+                log('Unable to set Ceph index mapping on Elasticsearch', level='error')
     status_set('maintenance', '')
 
 
@@ -178,5 +179,6 @@ def carbon_relation_changed():
 if __name__ == '__main__':
     try:
         hooks.execute(sys.argv)
+        status_set('', '')
     except UnregisteredHookError as e:
         log('Unknown hook {} - skipping.'.format(e))
