@@ -143,7 +143,7 @@ def elasticsearch_relation_changed():
     if len(es_host_list) > 0:
         add_elasticsearch_to_logstash(es_host_list)
         setup_ceph_index(es_host_list)
-        update_service_config(option_list=['elasticsearch'], service_dict={'elasticsearch': es_host_list.pop()})
+        update_service_config(option_list=['elasticsearch'], service_dict={'elasticsearch': es_host_list.pop() + ":9200"})
         try:
             service_restart('logstash')
             service_restart('decode_ceph')
