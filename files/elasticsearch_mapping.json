@@ -25,7 +25,26 @@
             },
             "timestamp": {
                 "type": "long"
-            }
+            },
+            "ops_per_sec": {
+                "type": "long"
+            },
+            "write_bytes_sec": {
+                "type": "long"
+            },
+            "data": {
+                "type": "long"
+            },
+            "bytes_used": {
+                "type": "long"
+            },
+            "bytes_avail": {
+                "type": "long"
+            },
+            "bytes_total": {
+                "type": "long"
+            },
+
         }
     }
 }
