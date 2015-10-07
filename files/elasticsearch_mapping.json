@@ -43,8 +43,7 @@
             },
             "bytes_total": {
                 "type": "long"
-            },
-
+            }
         }
     }
 }
