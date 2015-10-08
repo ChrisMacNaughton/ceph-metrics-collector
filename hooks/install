@@ -14,15 +14,21 @@ from charmhelpers.core.hookenv import service_name, log
 from charmhelpers.core.templating import render
 from charmhelpers.core.host import mkdir
 
-def setup_upstart_job():
+def setup_upstart_jobs():
     working_dir = os.getcwd()
     charm_upstart_conf = "/var/lib/charm/{}/upstart.conf".format(service_name())
     mkdir(os.path.dirname(charm_upstart_conf))
-    context = {'decoder_path': '{}/hooks/decode_ceph'.format(working_dir)}
+    context = {'decoder_path': '{}/hooks/decode_ceph'.format(working_dir), 'name': 'ceph-metrics-collector'}
 
     render('upstart.conf', charm_upstart_conf, context, perms=0o644)
     log('copying {} to /etc/init'.format(charm_upstart_conf))
     shutil.copy(charm_upstart_conf, '/etc/init/decode_ceph.conf')
+
+    context = {'decoder_path': '{}/hooks/ceph_monitor'.format(working_dir), 'name': 'ceph-monitor'}
+
+    render('upstart.conf', charm_upstart_conf, context, perms=0o644)
+    log('copying {} to /etc/init'.format(charm_upstart_conf))
+    shutil.copy(charm_upstart_conf, '/etc/init/monitor_ceph.conf')
 
 
 
@@ -33,7 +39,7 @@ def install():
     fetch.apt_update()
     fetch.apt_install(fetch.filter_installed_packages(
         ['collectd', 'collectd-utils', 'logstash', 'libpcap-dev', 'python-netifaces']))
-    setup_upstart_job()
+    setup_upstart_jobs()
     setup_logstash()
 
 def setup_logstash():
