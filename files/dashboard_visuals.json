@@ -1,0 +1,170 @@
+{{
+"_id": "ceph_osd_flag_ack",
+"_type": "search",
+"_source": {
+"title": "ceph_osd_flag_ack",
+"description": "",
+"hits": 0,
+"columns": [
+"_source"
+],
+"sort": [
+"postDate",
+"desc"
+],
+"version": 1,
+"kibanaSavedObjectMeta":
+{
+"searchSourceJSON": "{\"index\":\"ceph\",\"query\":{\"query_string\":{\"query\":\"operation: CEPH_OSD_FLAG_ACK*\",\"analyze_wildcard\":true}},\"highlight\":{\"pre_tags\":[\"@kibana-highlighted-field@\"],\"post_tags\":[\"@/kibana-highlighted-field@\"],\"fields\":{\"*\":{}},\"fragment_size\":2147483647},\"filter\":[]}"
+}
+}
+},
+{
+"_id": "volume_avail",
+"_type": "search",
+"_source":{
+"title": "volume_avail",
+"description": "",
+"hits": 0,
+"columns": [
+"bytes_avail"
+],
+"sort": [
+"postDate",
+"desc"
+],
+"version": 1,
+"kibanaSavedObjectMeta":
+{
+"searchSourceJSON": "{\"index\":\"ceph\",\"highlight\":{\"pre_tags\":[\"@kibana-highlighted-field@\"],\"post_tags\":[\"@/kibana-highlighted-field@\"],\"fields\":{\"*\":{}},\"fragment_size\":2147483647},\"filter\":[],\"query\":{\"query_string\":{\"query\":\"bytes_avail: *\",\"analyze_wildcard\":true}}}"
+}
+}
+},
+{
+"_id": "volumeavail",
+"_type": "search",
+"_source":{
+"title": "volumeavail",
+"description": "",
+"hits": 0,
+"columns": [
+"bytes_avail"
+],
+"sort": [
+"postDate",
+"desc"
+],
+"version": 1,
+"kibanaSavedObjectMeta":
+{
+"searchSourceJSON": "{\"index\":\"ceph\",\"highlight\":{\"pre_tags\":[\"@kibana-highlighted-field@\"],\"post_tags\":[\"@/kibana-highlighted-field@\"],\"fields\":{\"*\":{}},\"fragment_size\":2147483647},\"filter\":[],\"query\":{\"query_string\":{\"query\":\"bytes_avail: *\",\"analyze_wildcard\":true}}}"
+}
+}
+},
+{
+"_id": "ceph_read_bytes",
+"_type": "search",
+"_source":{
+"title": "ceph_read_bytes",
+"description": "",
+"hits": 0,
+"columns": [
+"read_bytes_sec"
+],
+"sort": [
+"postDate",
+"desc"
+],
+"version": 1,
+"kibanaSavedObjectMeta":
+{
+"searchSourceJSON": "{\"index\":\"ceph\",\"highlight\":{\"pre_tags\":[\"@kibana-highlighted-field@\"],\"post_tags\":[\"@/kibana-highlighted-field@\"],\"fields\":{\"*\":{}},\"fragment_size\":2147483647},\"filter\":[],\"query\":{\"query_string\":{\"query\":\"read_bytes_sec: *\",\"analyze_wildcard\":true}}}"
+}
+}
+},
+{
+"_id": "ceph_write_bytes",
+"_type": "search",
+"_source":{
+"title": "ceph_write_bytes",
+"description": "",
+"hits": 0,
+"columns": [
+"write_bytes_sec"
+],
+"sort": [
+"postDate",
+"desc"
+],
+"version": 1,
+"kibanaSavedObjectMeta":
+{
+"searchSourceJSON": "{\"index\":\"ceph\",\"highlight\":{\"pre_tags\":[\"@kibana-highlighted-field@\"],\"post_tags\":[\"@/kibana-highlighted-field@\"],\"fields\":{\"*\":{}},\"fragment_size\":2147483647},\"filter\":[],\"query\":{\"query_string\":{\"query\":\"write_bytes_sec: *\",\"analyze_wildcard\":true}}}"
+}
+}
+},
+{
+"_id": "ceph_ops",
+"_type": "search",
+"_source":{
+"title": "ceph_ops",
+"description": "",
+"hits": 0,
+"columns": [
+"ops_per_sec"
+],
+"sort": [
+"postDate",
+"desc"
+],
+"version": 1,
+"kibanaSavedObjectMeta":
+{
+"searchSourceJSON": "{\"index\":\"ceph\",\"highlight\":{\"pre_tags\":[\"@kibana-highlighted-field@\"],\"post_tags\":[\"@/kibana-highlighted-field@\"],\"fields\":{\"*\":{}},\"fragment_size\":2147483647},\"filter\":[],\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"ops_per_sec: *\"}}}"
+}
+}
+},
+{
+"_id": "ceph_writes",
+"_type": "search",
+"_source":{
+"title": "ceph_writes",
+"description": "",
+"hits": 0,
+"columns": [
+"ceph_writes"
+],
+"sort": [
+"@timestamp",
+"desc"
+],
+"version": 1,
+"kibanaSavedObjectMeta":
+{
+"searchSourceJSON": "{\"index\":\"logstash-*\",\"highlight\":{\"pre_tags\":[\"@kibana-highlighted-field@\"],\"post_tags\":[\"@/kibana-highlighted-field@\"],\"fields\":{\"*\":{}},\"fragment_size\":2147483647},\"filter\":[],\"query\":{\"query_string\":{\"query\":\"ceph_writes: *\",\"analyze_wildcard\":true}}}"
+}
+}
+},
+{
+"_id": "throughput",
+"_type": "search",
+"_source":{
+"title": "throughput",
+"description": "",
+"hits": 0,
+"columns": [
+"read_bytes_sec",
+"write_bytes_sec"
+],
+"sort": [
+"postDate",
+"desc"
+],
+"version": 1,
+"kibanaSavedObjectMeta":
+{
+"searchSourceJSON": "{\"index\":\"ceph\",\"query\":{\"query_string\":{\"query\":\"read_bytes_sec: * or write_bytes_sec: *\",\"analyze_wildcard\":true}},\"highlight\":{\"pre_tags\":[\"@kibana-highlighted-field@\"],\"post_tags\":[\"@/kibana-highlighted-field@\"],\"fields\":{\"*\":{}},\"fragment_size\":2147483647},\"filter\":[]}"
+}
+}
+}
+}

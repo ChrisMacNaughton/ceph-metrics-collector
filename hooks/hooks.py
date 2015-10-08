@@ -146,7 +146,10 @@ def setup_kibana_index(elasticsearch_servers):
         # Now load the config data
         set_es_mapping("http://{}:9200/.kibana/index-pattern/ceph".format(server), "ceph_index.json")
         set_es_mapping("http://{}:9200/.kibana/index-pattern/logstash-*".format(server), "logstash_index.json")
-        # TODO: Still need to set the default index.  How do we do that?
+        # Set the default index
+        set_es_mapping("http://{}:9200/.kibana/config/4.1.2".format(server), "default_index.json")
+
+        # Now load the visualizations and the dashboard!
 
     status_set('maintenance', '')
 

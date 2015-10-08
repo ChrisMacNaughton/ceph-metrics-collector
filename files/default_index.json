@@ -1,0 +1,11 @@
+{
+  "_index": ".kibana",
+  "_type": "config",
+  "_id": "4.1.2",
+  "_score": 1,
+  "_source": {
+    "buildNum": 7562,
+    "defaultIndex": "logstash-*"
+  },
+  "defaultIndex": "logstash-*"
+}
