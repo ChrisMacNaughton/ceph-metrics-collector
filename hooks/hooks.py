@@ -107,6 +107,45 @@ def restart():
             level='ERROR')
 
 
+# Creates an index in elasticsearch if it did not exist
+def create_es_index(url):
+    result = requests.get(url)
+    if result.status_code != requests.codes.ok:
+        # Doesn't exist.  Lets create it
+        status_set('maintenance', 'Creating index on elasticsearch for {}'.format(url))
+        index_create = requests.put(url)
+        if index_create.status_code != requests.codes.ok:
+            log('Unable to create index on Elasticsearch for {}'.format(url), level='error')
+        status_set('maintenance', '')
+
+
+# Open a file and set that mapping in elasticsearch
+def set_es_mapping(url, file_name):
+    status_set('maintenance', 'Loading mappings for {} into elasticsearch from {}'.format(url, file_name))
+    with open('files/{}'.format(file_name), 'r') as payload:
+        response = requests.post(url, data=payload)
+        if response.status_code != requests.codes.ok:
+            # Try the next server in the cluster
+            log('Unable to set index mapping on Elasticsearch for {}'.format(url), level='error')
+    status_set('maintenance', '')
+
+
+# Add an index to Elasticsearch with an explicit mapping
+def setup_kibana_index(elasticsearch_servers):
+    log('elastic servers' + str(elasticsearch_servers))
+    if is_leader():
+        server = elasticsearch_servers[0]  # save a reference to the first server
+
+        create_es_index("http://{}:9200/.kibana".format(server))
+
+        set_es_mapping("http://{}:9200/.kibana/_mapping/config".format(server), "kibana_config_mapping.json")
+        set_es_mapping("http://{}:9200/.kibana/_mapping/dashboard".format(server), "kibana_dashboard_mapping.json")
+        set_es_mapping("http://{}:9200/.kibana/_mapping/index".format(server), "kibana_index_mapping.json")
+        set_es_mapping("http://{}:9200/.kibana/_mapping/search".format(server), "kibana_search_mapping.json")
+
+    status_set('maintenance', '')
+
+
 # Add an index to Elasticsearch with an explicit mapping
 def setup_ceph_index(elasticsearch_servers):
     log('elastic servers' + str(elasticsearch_servers))
@@ -114,23 +153,8 @@ def setup_ceph_index(elasticsearch_servers):
         # Prevent everyone from trying the same thing
         # Check if the index exists first
         server = elasticsearch_servers[0]  # save a reference to the first server
-        result = requests.get("http://{}:9200/ceph".format(server))
-        if result.status_code != requests.codes.ok:
-            # Doesn't exist.  Lets create it
-            status_set('maintenance', 'Creating ceph index on elasticsearch')
-            index_create = requests.put("http://{}:9200/ceph".format(server))
-            if index_create.status_code != requests.codes.ok:
-                # Try the next server in the cluster
-                log('Unable to create Ceph index on Elasticsearch', level='error')
-            status_set('maintenance', '')
-
-        status_set('maintenance', 'Loading mapping for ceph index into elasticsearch')
-        with open('files/elasticsearch_mapping.json', 'r') as payload:
-            response = requests.post("http://{}:9200/ceph/_mapping/operations".format(server),
-                                     data=payload)
-            if response.status_code != requests.codes.ok:
-                # Try the next server in the cluster
-                log('Unable to set Ceph index mapping on Elasticsearch', level='error')
+        create_es_index("http://{}:9200/ceph".format(server))
+        set_es_mapping("http://{}:9200/ceph/_mapping/operations".format(server), "elasticsearch_mapping.json")
     status_set('maintenance', '')
 
 
@@ -143,6 +167,7 @@ def elasticsearch_relation_changed():
     if len(es_host_list) > 0:
         add_elasticsearch_to_logstash(es_host_list)
         setup_ceph_index(es_host_list)
+        setup_kibana_index(es_host_list)
         server = es_host_list[0]
         update_service_config(option_list=['elasticsearch'], service_dict={'elasticsearch': server + ":9200"})
         try:

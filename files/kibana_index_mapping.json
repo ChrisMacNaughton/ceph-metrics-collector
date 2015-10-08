@@ -1,0 +1,21 @@
+{
+  "index-pattern": {
+    "properties": {
+      "fieldFormatMap": {
+        "type": "string"
+      },
+      "fields": {
+        "type": "string"
+      },
+      "intervalName": {
+        "type": "string"
+      },
+      "timeFieldName": {
+        "type": "string"
+      },
+      "title": {
+        "type": "string"
+      }
+    }
+  }
+}
