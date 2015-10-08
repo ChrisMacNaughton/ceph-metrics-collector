@@ -28,7 +28,7 @@ def setup_upstart_jobs():
 
     render('upstart.conf', charm_upstart_conf, context, perms=0o644)
     log('copying {} to /etc/init'.format(charm_upstart_conf))
-    shutil.copy(charm_upstart_conf, '/etc/init/monitor_ceph.conf')
+    shutil.copy(charm_upstart_conf, '/etc/init/ceph_monitor.conf')
 
 
 
