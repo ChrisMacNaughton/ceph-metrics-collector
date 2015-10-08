@@ -1,0 +1,20 @@
+{
+  "_id": "ceph_read_bytes",
+  "_type": "search",
+  "_source": {
+    "title": "ceph_read_bytes",
+    "description": "",
+    "hits": 0,
+    "columns": [
+      "read_bytes_sec"
+    ],
+    "sort": [
+      "postDate",
+      "desc"
+    ],
+    "version": 1,
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"index\":\"ceph\",\"highlight\":{\"pre_tags\":[\"@kibana-highlighted-field@\"],\"post_tags\":[\"@/kibana-highlighted-field@\"],\"fields\":{\"*\":{}},\"fragment_size\":2147483647},\"filter\":[],\"query\":{\"query_string\":{\"query\":\"read_bytes_sec: *\",\"analyze_wildcard\":true}}}"
+    }
+  }
+}

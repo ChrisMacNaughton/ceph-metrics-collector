@@ -7,6 +7,7 @@ setup.pre_install()
 from charmhelpers.core.hookenv import Hooks, UnregisteredHookError, log, relation_get, related_units, charm_dir, \
     status_set, is_leader
 from charmhelpers.core.host import service_restart
+import glob
 import os
 import sys
 import subprocess
@@ -138,18 +139,30 @@ def setup_kibana_index(elasticsearch_servers):
 
         create_es_index("http://{}:9200/.kibana".format(server))
 
-        set_es_mapping("http://{}:9200/.kibana/_mapping/config".format(server), "kibana_config_mapping.json")
-        set_es_mapping("http://{}:9200/.kibana/_mapping/dashboard".format(server), "kibana_dashboard_mapping.json")
-        set_es_mapping("http://{}:9200/.kibana/_mapping/index".format(server), "kibana_index_mapping.json")
-        set_es_mapping("http://{}:9200/.kibana/_mapping/search".format(server), "kibana_search_mapping.json")
+        # Load the mappings
+        files = glob.glob("mappings/*")
+        for mapping_file in files:
+            set_es_mapping("http://{}:9200/.kibana/_mapping/{}".format(server, mapping_file.rstrip('.json')),
+                           mapping_file)
 
         # Now load the config data
         set_es_mapping("http://{}:9200/.kibana/index-pattern/ceph".format(server), "ceph_index.json")
         set_es_mapping("http://{}:9200/.kibana/index-pattern/logstash-*".format(server), "logstash_index.json")
+
         # Set the default index
         set_es_mapping("http://{}:9200/.kibana/config/4.1.2".format(server), "default_index.json")
 
+        # Now load the searches
+        files = glob.glob("searches/*")
+        for search_file in files:
+            set_es_mapping("http://{}:9200/.kibana/search/{}".format(server, search_file.rstrip('.json')),
+                           search_file)
+
         # Now load the visualizations and the dashboard!
+        files = glob.glob("visuals/*")
+        for visual_file in files:
+            set_es_mapping("http://{}:9200/.kibana/visualization/{}".format(server, visual_file.rstrip('.json')),
+                           visual_file)
 
     status_set('maintenance', '')
 
@@ -162,7 +175,7 @@ def setup_ceph_index(elasticsearch_servers):
         # Check if the index exists first
         server = elasticsearch_servers[0]  # save a reference to the first server
         create_es_index("http://{}:9200/ceph".format(server))
-        set_es_mapping("http://{}:9200/ceph/_mapping/operations".format(server), "elasticsearch_mapping.json")
+        set_es_mapping("http://{}:9200/ceph/_mapping/operations".format(server), "ceph_operations.json")
     status_set('maintenance', '')
 
 

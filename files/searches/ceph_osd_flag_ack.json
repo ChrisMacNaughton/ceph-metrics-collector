@@ -1,0 +1,20 @@
+{
+  "_id": "ceph_osd_flag_ack",
+  "_type": "search",
+  "_source": {
+    "title": "ceph_osd_flag_ack",
+    "description": "",
+    "hits": 0,
+    "columns": [
+      "_source"
+    ],
+    "sort": [
+      "postDate",
+      "desc"
+    ],
+    "version": 1,
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"index\":\"ceph\",\"query\":{\"query_string\":{\"query\":\"operation: CEPH_OSD_FLAG_ACK*\",\"analyze_wildcard\":true}},\"highlight\":{\"pre_tags\":[\"@kibana-highlighted-field@\"],\"post_tags\":[\"@/kibana-highlighted-field@\"],\"fields\":{\"*\":{}},\"fragment_size\":2147483647},\"filter\":[]}"
+    }
+  }
+}

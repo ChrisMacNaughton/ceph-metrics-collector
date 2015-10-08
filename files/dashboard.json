@@ -1,0 +1,17 @@
+{
+  "_id": "Dashboard",
+  "_type": "dashboard",
+  "_source": {
+    "title": "Dashboard",
+    "hits": 0,
+    "description": "",
+    "panelsJSON": "[{\"col\":1,\"id\":\"Available-(Bytes)\",\"row\":1,\"size_x\":12,\"size_y\":2,\"type\":\"visualization\"},{\"col\":1,\"id\":\"Ceph-Read-(B-slash-s)\",\"row\":3,\"size_x\":6,\"size_y\":2,\"type\":\"visualization\"},{\"col\":7,\"id\":\"Ceph-Writes-(B-slash-s)\",\"row\":3,\"size_x\":6,\"size_y\":2,\"type\":\"visualization\"},{\"col\":10,\"id\":\"Ops-slash-Sec\",\"row\":5,\"size_x\":3,\"size_y\":2,\"type\":\"visualization\"},{\"col\":6,\"id\":\"Throughput\",\"row\":5,\"size_x\":4,\"size_y\":2,\"type\":\"visualization\"},{\"col\":1,\"id\":\"Ceph-Operations\",\"row\":5,\"size_x\":5,\"size_y\":2,\"type\":\"visualization\"}]",
+    "version": 1,
+    "timeRestore": true,
+    "timeTo": "now",
+    "timeFrom": "now-30s",
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"filter\":[{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"*\"}}}]}"
+    }
+  }
+}
