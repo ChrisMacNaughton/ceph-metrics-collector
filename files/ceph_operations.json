@@ -30,19 +30,22 @@
                 "type": "long"
             },
             "write_bytes_sec": {
-                "type": "long"
+                "type": "float"
+            },
+            "read_bytes_sec": {
+                "type": "float"
             },
             "data": {
-                "type": "long"
+                "type": "float"
             },
             "bytes_used": {
-                "type": "long"
+                "type": "float"
             },
             "bytes_avail": {
-                "type": "long"
+                "type": "float"
             },
             "bytes_total": {
-                "type": "long"
+                "type": "float"
             }
         }
     }

@@ -6,8 +6,8 @@ import setup
 setup.pre_install()
 from charmhelpers.core.hookenv import Hooks, UnregisteredHookError, log, relation_get, related_units, charm_dir, \
     status_set, is_leader
-from charmhelpers.core.host import service_restart
 import glob
+from charmhelpers.core.host import service_restart, service_stop, service_start
 import os
 import sys
 import subprocess
@@ -98,6 +98,11 @@ def stop():
     except subprocess.CalledProcessError as err:
         log('Service decode_ceph start failed with return code: {}'.format(err.returncode),
             level='ERROR')
+    try:
+        subprocess.check_call(['service', 'ceph_monitor', 'stop'])
+    except subprocess.CalledProcessError as err:
+        log('Service ceph_monitor start failed with return code: {}'.format(err.returncode),
+            level='ERROR')
 
 
 def restart():
@@ -105,6 +110,11 @@ def restart():
         subprocess.check_call(['service', 'decode_ceph', 'restart'])
     except subprocess.CalledProcessError as err:
         log('Service decode_ceph start failed with return code: {}'.format(err.returncode),
+            level='ERROR')
+    try:
+        subprocess.check_call(['service', 'ceph_monitor', 'restart'])
+    except subprocess.CalledProcessError as err:
+        log('Service ceph_monitor start failed with return code: {}'.format(err.returncode),
             level='ERROR')
 
 
@@ -186,14 +196,17 @@ def elasticsearch_relation_changed():
         es_host_list.append(relation_get('private-address', member))
     # Check the list length so pop doesn't fail
     if len(es_host_list) > 0:
+        service_stop("decode_ceph")
+        service_stop("ceph_monitor")
         add_elasticsearch_to_logstash(es_host_list)
         setup_ceph_index(es_host_list)
-        setup_kibana_index(es_host_list)
+        # setup_kibana_index(es_host_list)
         server = es_host_list[0]
         update_service_config(option_list=['elasticsearch'], service_dict={'elasticsearch': server + ":9200"})
         try:
             service_restart('logstash')
-            service_restart('decode_ceph')
+            service_start('decode_ceph')
+            service_start('ceph_monitor')
         except subprocess.CalledProcessError as err:
             log('Service restart failed with err: ' + err.message)
     else:
