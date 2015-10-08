@@ -32,6 +32,9 @@
             "write_bytes_sec": {
                 "type": "long"
             },
+            "read_bytes_sec": {
+                "type": "long"
+            },
             "data": {
                 "type": "long"
             },

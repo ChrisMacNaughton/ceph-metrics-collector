@@ -97,6 +97,11 @@ def stop():
     except subprocess.CalledProcessError as err:
         log('Service decode_ceph start failed with return code: {}'.format(err.returncode),
             level='ERROR')
+    try:
+        subprocess.check_call(['service', 'ceph_monitor', 'stop'])
+    except subprocess.CalledProcessError as err:
+        log('Service ceph_monitor start failed with return code: {}'.format(err.returncode),
+            level='ERROR')
 
 
 def restart():
@@ -104,6 +109,11 @@ def restart():
         subprocess.check_call(['service', 'decode_ceph', 'restart'])
     except subprocess.CalledProcessError as err:
         log('Service decode_ceph start failed with return code: {}'.format(err.returncode),
+            level='ERROR')
+    try:
+        subprocess.check_call(['service', 'ceph_monitor', 'restart'])
+    except subprocess.CalledProcessError as err:
+        log('Service ceph_monitor start failed with return code: {}'.format(err.returncode),
             level='ERROR')
 
 
@@ -178,6 +188,7 @@ def elasticsearch_relation_changed():
         try:
             service_restart('logstash')
             service_restart('decode_ceph')
+            service_restart('ceph_monitor')
         except subprocess.CalledProcessError as err:
             log('Service restart failed with err: ' + err.message)
     else:
