@@ -6,7 +6,8 @@ import setup
 setup.pre_install()
 from charmhelpers.core.hookenv import Hooks, UnregisteredHookError, log, relation_get, related_units, charm_dir, \
     status_set, is_leader
-from charmhelpers.core.host import service_restart
+import glob
+from charmhelpers.core.host import service_restart, service_stop, service_start
 import os
 import sys
 import subprocess
@@ -97,6 +98,11 @@ def stop():
     except subprocess.CalledProcessError as err:
         log('Service decode_ceph start failed with return code: {}'.format(err.returncode),
             level='ERROR')
+    try:
+        subprocess.check_call(['service', 'ceph_monitor', 'stop'])
+    except subprocess.CalledProcessError as err:
+        log('Service ceph_monitor start failed with return code: {}'.format(err.returncode),
+            level='ERROR')
 
 
 def restart():
@@ -105,6 +111,70 @@ def restart():
     except subprocess.CalledProcessError as err:
         log('Service decode_ceph start failed with return code: {}'.format(err.returncode),
             level='ERROR')
+    try:
+        subprocess.check_call(['service', 'ceph_monitor', 'restart'])
+    except subprocess.CalledProcessError as err:
+        log('Service ceph_monitor start failed with return code: {}'.format(err.returncode),
+            level='ERROR')
+
+
+# Creates an index in elasticsearch if it did not exist
+def create_es_index(url):
+    result = requests.get(url)
+    if result.status_code != requests.codes.ok:
+        # Doesn't exist.  Lets create it
+        status_set('maintenance', 'Creating index on elasticsearch for {}'.format(url))
+        index_create = requests.put(url)
+        if index_create.status_code != requests.codes.ok:
+            log('Unable to create index on Elasticsearch for {}'.format(url), level='error')
+        status_set('maintenance', '')
+
+
+# Open a file and set that mapping in elasticsearch
+def set_es_mapping(url, file_name):
+    status_set('maintenance', 'Loading mappings for {} into elasticsearch from {}'.format(url, file_name))
+    with open('files/{}'.format(file_name), 'r') as payload:
+        response = requests.post(url, data=payload)
+        if response.status_code != requests.codes.ok:
+            # Try the next server in the cluster
+            log('Unable to set index mapping on Elasticsearch for {}'.format(url), level='error')
+    status_set('maintenance', '')
+
+
+# Add an index to Elasticsearch with an explicit mapping
+def setup_kibana_index(elasticsearch_servers):
+    log('elastic servers' + str(elasticsearch_servers))
+    if is_leader():
+        server = elasticsearch_servers[0]  # save a reference to the first server
+
+        create_es_index("http://{}:9200/.kibana".format(server))
+
+        # Load the mappings
+        files = glob.glob("mappings/*")
+        for mapping_file in files:
+            set_es_mapping("http://{}:9200/.kibana/_mapping/{}".format(server, mapping_file.rstrip('.json')),
+                           mapping_file)
+
+        # Now load the config data
+        set_es_mapping("http://{}:9200/.kibana/index-pattern/ceph".format(server), "ceph_index.json")
+        set_es_mapping("http://{}:9200/.kibana/index-pattern/logstash-*".format(server), "logstash_index.json")
+
+        # Set the default index
+        set_es_mapping("http://{}:9200/.kibana/config/4.1.2".format(server), "default_index.json")
+
+        # Now load the searches
+        files = glob.glob("searches/*")
+        for search_file in files:
+            set_es_mapping("http://{}:9200/.kibana/search/{}".format(server, search_file.rstrip('.json')),
+                           search_file)
+
+        # Now load the visualizations and the dashboard!
+        files = glob.glob("visuals/*")
+        for visual_file in files:
+            set_es_mapping("http://{}:9200/.kibana/visualization/{}".format(server, visual_file.rstrip('.json')),
+                           visual_file)
+
+    status_set('maintenance', '')
 
 
 # Add an index to Elasticsearch with an explicit mapping
@@ -114,23 +184,8 @@ def setup_ceph_index(elasticsearch_servers):
         # Prevent everyone from trying the same thing
         # Check if the index exists first
         server = elasticsearch_servers[0]  # save a reference to the first server
-        result = requests.get("http://{}:9200/ceph".format(server))
-        if result.status_code != requests.codes.ok:
-            # Doesn't exist.  Lets create it
-            status_set('maintenance', 'Creating ceph index on elasticsearch')
-            index_create = requests.put("http://{}:9200/ceph".format(server))
-            if index_create.status_code != requests.codes.ok:
-                # Try the next server in the cluster
-                log('Unable to create Ceph index on Elasticsearch', level='error')
-            status_set('maintenance', '')
-
-        status_set('maintenance', 'Loading mapping for ceph index into elasticsearch')
-        with open('files/elasticsearch_mapping.json', 'r') as payload:
-            response = requests.post("http://{}:9200/ceph/_mapping/operations".format(server),
-                                     data=payload)
-            if response.status_code != requests.codes.ok:
-                # Try the next server in the cluster
-                log('Unable to set Ceph index mapping on Elasticsearch', level='error')
+        create_es_index("http://{}:9200/ceph".format(server))
+        set_es_mapping("http://{}:9200/ceph/_mapping/operations".format(server), "ceph_operations.json")
     status_set('maintenance', '')
 
 
@@ -141,13 +196,17 @@ def elasticsearch_relation_changed():
         es_host_list.append(relation_get('private-address', member))
     # Check the list length so pop doesn't fail
     if len(es_host_list) > 0:
+        service_stop("decode_ceph")
+        service_stop("ceph_monitor")
         add_elasticsearch_to_logstash(es_host_list)
         setup_ceph_index(es_host_list)
+        # setup_kibana_index(es_host_list)
         server = es_host_list[0]
         update_service_config(option_list=['elasticsearch'], service_dict={'elasticsearch': server + ":9200"})
         try:
             service_restart('logstash')
-            service_restart('decode_ceph')
+            service_start('decode_ceph')
+            service_start('ceph_monitor')
         except subprocess.CalledProcessError as err:
             log('Service restart failed with err: ' + err.message)
     else:
