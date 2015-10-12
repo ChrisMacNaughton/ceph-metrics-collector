@@ -184,8 +184,8 @@ def setup_ceph_index(elasticsearch_servers):
         # Prevent everyone from trying the same thing
         # Check if the index exists first
         server = elasticsearch_servers[0]  # save a reference to the first server
-        create_es_index("http://{}:9200/ceph".format(server))
-        set_es_mapping("http://{}:9200/ceph/_mapping/operations".format(server), "ceph_operations.json")
+        # Create the Index + Mapping in 1 shot
+        set_es_mapping("http://{}:9200/ceph".format(server), "ceph_operations.json")
     status_set('maintenance', '')
 
 
