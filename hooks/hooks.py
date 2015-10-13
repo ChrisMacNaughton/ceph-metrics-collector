@@ -1,7 +1,9 @@
 #!/usr/bin/python
 import requests
+import operator
 
 import setup
+
 
 setup.pre_install()
 from charmhelpers.core.hookenv import Hooks, UnregisteredHookError, log, relation_get, related_units, charm_dir, \
@@ -31,46 +33,52 @@ def juju_header():
     return header
 
 
-def write_config(outputs_list, service_dict):
-    data = {}
-    data.update(service_dict)
-    data['outputs'] = outputs_list
+# Takes 2 dictionaries and combines their key/values with a unique set of outputs list
+def combine_dicts(a, b, op=operator.add):
+    outputs = []
+    if 'outputs' not in a:
+        outputs = b['outputs']
+        del b['outputs']
+    elif 'outputs' not in b:
+        outputs = a['outputs']
+        del a['outputs']
+    else:
+        outputs = list(set(a['outputs'] + b['outputs']))
+    c = dict(a.items() + b.items() + [(k, op(a[k], b[k])) for k in set(b) & set(a)])
+    c['outputs'] = outputs
+    return c
 
+
+def write_config(service_dict):
     try:
         with open(config_file, 'w+') as config:
             config.write(
                 # {'elasticsearch': '127.0.0.7', 'outputs': ['elasticsearch', 'stdout'] }
-                dump(data=data, Dumper=Dumper))
+                dump(data=service_dict, Dumper=Dumper))
     except IOError as err:
         log("IOError with {}:{}".format(config_file, err.message))
 
 
 # Expects a list of output types: ['stdout', 'elasticsearch', 'etc']
 # and also a dict of params for that service: {'elasticsearch': '127.0.0.1'}
-def update_service_config(option_list, service_dict):
-    assert isinstance(option_list, list)
+def update_service_config(service_dict):
+    # assert isinstance(option_list, list)
     assert isinstance(service_dict, dict)
 
     # Write it out if the file doesn't exist
     if not os.path.exists(config_file):
-        write_config(option_list, service_dict)
+        write_config(service_dict)
     try:
         with open(config_file, 'r+') as config:
             try:
                 data = load(config, Loader=Loader)
-                if 'outputs' in data:
-                    output_list = data['outputs']
-                    # Merge the lists
-                    new_options = list(set(option_list + output_list))
-                    write_config(new_options, service_dict)
-                else:
-                    # outputs is missing.  Overwrite it
-                    write_config(option_list, service_dict)
+                new_service_dict = combine_dicts(data, service_dict)
+                write_config(new_service_dict)
             except SyntaxError as err:
                 # Yaml config file is screwed up.  Write out a fresh one.  We could lose options here by accident
                 # Todo: this should really utilize a tmp file + mv to ensure atomic file operation in case of crashes
                 log('Invalid syntax found in /etc/decode.conf.  Overwriting with new file. ' + err.message)
-                write_config(option_list, service_dict)
+                write_config(service_dict)
     except IOError as err:
         log("IOError with /etc/decode.conf. " + err.message)
 
@@ -202,7 +210,7 @@ def elasticsearch_relation_changed():
         # setup_kibana_index(es_host_list)
         add_elasticsearch_to_logstash(es_host_list)
         server = es_host_list[0]
-        update_service_config(option_list=['elasticsearch'], service_dict={'elasticsearch': server + ":9200"})
+        update_service_config(service_dict={'outputs': ['elasticsearch'], 'elasticsearch': server + ":9200"})
         try:
             service_restart('logstash')
             service_start('decode_ceph')
@@ -226,10 +234,27 @@ def add_elasticsearch_to_logstash(elasticsearch_servers):
         log("No elasticsearch servers found?")
 
 
+@hooks.hook('cabs-relation-changed')
+def cabs_relation_changed():
+    cabs_host_list = []
+    for member in related_units():
+        cabs_host_list.append(relation_get('private-address', member))
+    # Check the list length so pop doesn't fail
+    if len(cabs_host_list) > 0:
+        service_stop("decode_ceph")
+        service_stop("ceph_monitor")
+        server = cabs_host_list[0]
+        update_service_config(service_dict={'outputs': ['carbon'], 'carbon': server + ":9000"})
+        try:
+            service_start('decode_ceph')
+        except subprocess.CalledProcessError as err:
+            log('Service restart failed with err: ' + err.message)
+
+
 @hooks.hook('carbon-relation-changed')
 def carbon_relation_changed():
     carbon_server = related_units()
-    update_service_config(option_list=['carbon'], service_dict={'carbon': carbon_server})
+    update_service_config(service_dict={'outputs': ['carbon'], 'carbon': carbon_server})
     try:
         service_restart('decode_ceph')
     except subprocess.CalledProcessError as err:

@@ -16,3 +16,5 @@ requires:
     scope: container
   elasticsearch:
     interface: elasticsearch
+  cabs:
+    interface: http
