@@ -33,6 +33,7 @@ def juju_header():
     return header
 
 
+# TODO: Unit test this
 # Takes 2 dictionaries and combines their key/values with a unique set of outputs list
 def combine_dicts(a, b, op=operator.add):
     outputs = []
@@ -44,7 +45,7 @@ def combine_dicts(a, b, op=operator.add):
         del a['outputs']
     else:
         outputs = list(set(a['outputs'] + b['outputs']))
-    c = dict(a.items() + b.items() + [(k, op(a[k], b[k])) for k in set(b) & set(a)])
+    c = dict(a, **b)
     c['outputs'] = outputs
     return c
 
@@ -67,17 +68,20 @@ def update_service_config(service_dict):
 
     # Write it out if the file doesn't exist
     if not os.path.exists(config_file):
+        log('creating new service config file: ' + str(service_dict))
         write_config(service_dict)
     try:
         with open(config_file, 'r+') as config:
             try:
                 data = load(config, Loader=Loader)
                 new_service_dict = combine_dicts(data, service_dict)
+                log('Writing combined service dict: ' + str(new_service_dict))
                 write_config(new_service_dict)
             except SyntaxError as err:
                 # Yaml config file is screwed up.  Write out a fresh one.  We could lose options here by accident
                 # Todo: this should really utilize a tmp file + mv to ensure atomic file operation in case of crashes
                 log('Invalid syntax found in /etc/decode.conf.  Overwriting with new file. ' + err.message)
+                log('Overwriting service dict: ' + str(service_dict))
                 write_config(service_dict)
     except IOError as err:
         log("IOError with /etc/decode.conf. " + err.message)
