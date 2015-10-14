@@ -200,6 +200,16 @@ def setup_ceph_index(elasticsearch_servers):
         set_es_mapping("http://{}:9200/ceph".format(server), "ceph_operations.json")
     status_set('maintenance', '')
 
+@hooks.hook('stats-relation-changed')
+def stats_relation_changed():
+    statsd_host = relation_get('hostname')
+    statsd_port = relation_get('port')
+    statsd = statsd_host + ':' + statsd_port
+    update_service_config(option_list=['statsd'], service_dict={'statsd': statsd})
+    try:
+        service_restart('decode_ceph')
+    except subprocess.CalledProcessError as err:
+        log('Service restart failed with err: ' + err.message)
 
 @hooks.hook('elasticsearch-relation-changed')
 def elasticsearch_relation_changed():
