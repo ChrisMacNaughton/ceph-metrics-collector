@@ -22,3 +22,5 @@ requires:
     interface: http
   stats:
     interface: statsd
+  db-api:
+    interface: influxdb-api
