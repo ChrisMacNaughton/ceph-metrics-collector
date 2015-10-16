@@ -15,7 +15,7 @@ import sys
 import subprocess
 from Cheetah.Template import Template
 from yaml import load, dump
-
+import time
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
@@ -200,7 +200,6 @@ def setup_ceph_index(elasticsearch_servers):
         set_es_mapping("http://{}:9200/ceph".format(server), "ceph_operations.json")
     status_set('maintenance', '')
 
-
 @hooks.hook('elasticsearch-relation-changed')
 def elasticsearch_relation_changed():
     es_host_list = []
@@ -212,11 +211,11 @@ def elasticsearch_relation_changed():
         service_stop("ceph_monitor")
         setup_ceph_index(es_host_list)
         # setup_kibana_index(es_host_list)
-        add_elasticsearch_to_logstash(es_host_list)
+        # add_elasticsearch_to_logstash(es_host_list)
         server = es_host_list[0]
         update_service_config(service_dict={'outputs': ['elasticsearch'], 'elasticsearch': server + ":9200"})
         try:
-            service_restart('logstash')
+            # service_restart('logstash')
             service_start('decode_ceph')
             service_start('ceph_monitor')
         except subprocess.CalledProcessError as err:
@@ -265,6 +264,44 @@ def carbon_relation_changed():
         log('Service restart failed with err: ' + err.message)
 
 
+@hooks.hook('stats-relation-changed')
+def stats_relation_changed():
+    statsd_host = relation_get('hostname')
+    statsd_port = relation_get('port')
+    statsd = statsd_host + ':' + statsd_port
+    update_service_config(service_dict={'outputs': ['statsd'], 'statsd': statsd})
+    try:
+        service_restart('decode_ceph')
+        service_restart('ceph_monitor')
+    except subprocess.CalledProcessError as err:
+        log('Service restart failed with err: ' + err.message)
+
+@hooks.hook(' db-api-relation-changed')
+def  db_api_relation_changed():
+    host = relation_get('hostname')
+    port = relation_get('port')
+    user = relation_get('user')
+    password = relation_get('password')
+    i = 0
+    while(host == None or port == None or user == None or password == None):
+        log('missing configuration for influxdb')
+        i += 1
+        if i > 120:
+            exit(1)
+        time.sleep(0.5)
+
+    influx = {
+        'host': host,
+        'port': port,
+        'user': user,
+        'password': password
+    }
+    update_service_config(service_dict={'outputs': ['influx'], 'influx': influx})
+    try:
+        service_restart('decode_ceph')
+        service_restart('ceph_monitor')
+    except subprocess.CalledProcessError as err:
+        log('Service restart failed with err: ' + err.message)
 if __name__ == '__main__':
     try:
         hooks.execute(sys.argv)
