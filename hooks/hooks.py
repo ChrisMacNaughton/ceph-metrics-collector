@@ -283,12 +283,9 @@ def  db_api_relation_changed():
     user = relation_get('user')
     password = relation_get('password')
     i = 0
-    while(host == None or port == None or user == None or password == None):
+    if(host == None or port == None or user == None or password == None):
         log('missing configuration for influxdb')
-        i += 1
-        if i > 120:
-            exit(1)
-        time.sleep(0.5)
+        exit
 
     influx = {
         'host': host,
