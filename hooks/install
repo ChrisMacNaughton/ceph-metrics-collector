@@ -14,6 +14,13 @@ from charmhelpers.core.hookenv import service_name, log
 from charmhelpers.core.templating import render
 from charmhelpers.core.host import mkdir
 
+def is_monitor():
+    try:
+        subprocess.check_call(['pgrep', '-f', 'ceph-mon'], stdout=open('/dev/null', 'w'), stderr=open('/dev/null', 'w'))
+        return True
+    except subprocess.CalledProcessError as err:
+        return False
+
 def setup_upstart_jobs():
     working_dir = os.getcwd()
     charm_upstart_conf = "/var/lib/charm/{}/upstart.conf".format(service_name())
@@ -24,34 +31,18 @@ def setup_upstart_jobs():
     log('copying {} to /etc/init'.format(charm_upstart_conf))
     shutil.copy(charm_upstart_conf, '/etc/init/decode_ceph.conf')
 
-    context = {'decoder_path': '{}/hooks/ceph_monitor'.format(working_dir), 'name': 'ceph-monitor'}
+    if(is_monitor()):
+        context = {'decoder_path': '{}/hooks/ceph_monitor'.format(working_dir), 'name': 'ceph-monitor'}
 
-    render('upstart.conf', charm_upstart_conf, context, perms=0o644)
-    log('copying {} to /etc/init'.format(charm_upstart_conf))
-    shutil.copy(charm_upstart_conf, '/etc/init/ceph_monitor.conf')
+        render('upstart.conf', charm_upstart_conf, context, perms=0o644)
+        log('copying {} to /etc/init'.format(charm_upstart_conf))
+        shutil.copy(charm_upstart_conf, '/etc/init/ceph_monitor.conf')
 
 
 
 def install():
     hookenv.log('Installing ceph-metrics-collector')
-    # fetch.add_source(source='deb http://packages.elasticsearch.org/logstash/1.5/debian stable main',
-    #                 key='D88E42B4')
-    # fetch.apt_update()
-    # fetch.apt_install(fetch.filter_installed_packages(
-    #    ['collectd', 'collectd-utils', 'logstash', 'libpcap-dev', 'python-netifaces']))
+    fetch.apt_update()
+    fetch.apt_install(fetch.filter_installed_packages(
+       ['collectd', 'collectd-utils', 'libpcap-dev', 'python-netifaces']))
     setup_upstart_jobs()
-    # setup_logstash()
-
-def setup_logstash():
-    if not os.path.exists("/opt/logstash/patterns"):
-        mkdir("/opt/logstash/patterns")
-    src = os.path.join(hookenv.charm_dir(), "files", "ceph")
-    dest = "/opt/logstash/patterns/ceph"
-    shutil.copyfile(src, dest)
-
-    src = os.path.join(hookenv.charm_dir(), "files", "ceph_es.conf")
-    dest = "/etc/logstash/conf.d/01-ceph.conf"
-    shutil.copyfile(src, dest)
-
-if __name__ == "__main__":
-    install()
