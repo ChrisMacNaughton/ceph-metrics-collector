@@ -1,6 +1,6 @@
 name: ceph-metrics-collector
 summary: Collect all the statistics that are important for Ceph
-maintainer:
+maintainers:
   - chris.holcombe@canonical.com
   - chris.macnaughton@canonical.com
 description: |

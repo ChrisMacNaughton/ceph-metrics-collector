@@ -286,19 +286,29 @@ def  db_api_relation_changed():
     if(host == None or port == None or user == None or password == None):
         log('missing configuration for influxdb')
         exit
+    else:
 
-    influx = {
-        'host': host,
-        'port': port,
-        'user': user,
-        'password': password
-    }
-    update_service_config(service_dict={'outputs': ['influx'], 'influx': influx})
-    try:
-        service_restart('decode_ceph')
-        service_restart('ceph_monitor')
-    except subprocess.CalledProcessError as err:
-        log('Service restart failed with err: ' + err.message)
+        influx = {
+            'host': host,
+            'port': port,
+            'user': user,
+            'password': password
+        }
+        if is_leader():
+            query = 'create database "ceph"'
+            url = 'http://{}:{}/query?q={}'.format(influx['host'], influx['port'], query)
+            log("Setting up ceph database using {}".format(url))
+            requests.get(url)
+            query = 'CREATE RETENTION POLICY "one_week" ON "ceph" DURATION 7d REPLICATION 1 DEFAULT'
+            log("Setting up ceph database retention policy using {}".format(url))
+            url = 'http://{}:{}/query?q={}'.format(influx['host'], influx['port'], query)
+            requests.get(url)
+        update_service_config(service_dict={'outputs': ['influx'], 'influx': influx})
+        try:
+            service_restart('decode_ceph')
+            service_restart('ceph_monitor')
+        except subprocess.CalledProcessError as err:
+            log('Service restart failed with err: ' + err.message)
 if __name__ == '__main__':
     try:
         hooks.execute(sys.argv)
