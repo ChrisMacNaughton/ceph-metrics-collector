@@ -14,13 +14,6 @@ from charmhelpers.core.hookenv import service_name, log
 from charmhelpers.core.templating import render
 from charmhelpers.core.host import mkdir
 
-def is_monitor():
-    try:
-        subprocess.check_call(['pgrep', '-f', 'ceph-mon'], stdout=open('/dev/null', 'w'), stderr=open('/dev/null', 'w'))
-        return True
-    except subprocess.CalledProcessError as err:
-        return False
-
 def setup_upstart_jobs():
     working_dir = os.getcwd()
     charm_upstart_conf = "/var/lib/charm/{}/upstart.conf".format(service_name())
@@ -31,12 +24,11 @@ def setup_upstart_jobs():
     log('copying {} to /etc/init'.format(charm_upstart_conf))
     shutil.copy(charm_upstart_conf, '/etc/init/decode_ceph.conf')
 
-    if(is_monitor()):
-        context = {'decoder_path': '{}/hooks/ceph_monitor'.format(working_dir), 'name': 'ceph-monitor'}
+    context = {'decoder_path': '{}/hooks/ceph_monitor'.format(working_dir), 'name': 'ceph-monitor'}
 
-        render('upstart.conf', charm_upstart_conf, context, perms=0o644)
-        log('copying {} to /etc/init'.format(charm_upstart_conf))
-        shutil.copy(charm_upstart_conf, '/etc/init/ceph_monitor.conf')
+    render('upstart.conf', charm_upstart_conf, context, perms=0o644)
+    log('copying {} to /etc/init'.format(charm_upstart_conf))
+    shutil.copy(charm_upstart_conf, '/etc/init/ceph_monitor.conf')
 
 
 

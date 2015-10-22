@@ -25,13 +25,6 @@ hooks = Hooks()
 
 config_file = '/etc/default/decode_ceph.yaml'
 
-def is_monitor():
-    try:
-        subprocess.check_call(['pgrep', '-f', 'ceph-mon'], stdout=open('/dev/null', 'w'), stderr=open('/dev/null', 'w'))
-        return True
-    except subprocess.CalledProcessError as err:
-        return False
-
 def juju_header():
     header = ("#-------------------------------------------------#\n"
               "# This file is Juju managed - do not edit by hand #\n"
@@ -104,8 +97,7 @@ def start():
         service_start('decode_ceph')
     except subprocess.CalledProcessError as err:
         log('Service restart failed with err: ' + err.message)
-    if(is_monitor()):
-        try:
+    try:
         service_start('ceph_monitor')
     except subprocess.CalledProcessError as err:
         log('Service restart failed with err: ' + err.message)
@@ -117,8 +109,7 @@ def stop():
         service_stop('decode_ceph')
     except subprocess.CalledProcessError as err:
         log('Service restart failed with err: ' + err.message)
-    if(is_monitor()):
-        try:
+    try:
         service_stop('ceph_monitor')
     except subprocess.CalledProcessError as err:
         log('Service restart failed with err: ' + err.message)
@@ -129,8 +120,7 @@ def restart():
         service_restart('decode_ceph')
     except subprocess.CalledProcessError as err:
         log('Service restart failed with err: ' + err.message)
-    if(is_monitor()):
-        try:
+    try:
         service_restart('ceph_monitor')
     except subprocess.CalledProcessError as err:
         log('Service restart failed with err: ' + err.message)
