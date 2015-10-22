@@ -1,21 +1,17 @@
 #!/usr/bin/python
 import requests
-import operator
 
 import setup
 
-
 setup.pre_install()
-from charmhelpers.core.hookenv import Hooks, UnregisteredHookError, log, relation_get, related_units, charm_dir, \
-    status_set, is_leader
-import glob
+from charmhelpers.core.hookenv import Hooks, UnregisteredHookError, log, relation_get, related_units, status_set, \
+    is_leader
 from charmhelpers.core.host import service_restart, service_stop, service_start
 import os
 import sys
 import subprocess
-from Cheetah.Template import Template
 from yaml import load, dump
-import time
+
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
@@ -24,6 +20,7 @@ except ImportError:
 hooks = Hooks()
 
 config_file = '/etc/default/decode_ceph.yaml'
+
 
 def juju_header():
     header = ("#-------------------------------------------------#\n"
@@ -34,7 +31,7 @@ def juju_header():
 
 # TODO: Unit test this
 # Takes 2 dictionaries and combines their key/values with a unique set of outputs list
-def combine_dicts(a, b, op=operator.add):
+def combine_dicts(a, b):
     outputs = []
     if 'outputs' not in a:
         outputs = b['outputs']
@@ -125,6 +122,7 @@ def restart():
     except subprocess.CalledProcessError as err:
         log('Service restart failed with err: ' + err.message)
 
+
 @hooks.hook('cabs-relation-changed')
 def cabs_relation_changed():
     cabs_host_list = []
@@ -143,14 +141,15 @@ def carbon_relation_changed():
     update_service_config(service_dict={'outputs': ['carbon'], 'carbon': carbon_server})
     restart()
 
+
 @hooks.hook(' db-api-relation-changed')
-def  db_api_relation_changed():
+def db_api_relation_changed():
     host = relation_get('hostname')
     port = relation_get('port')
     user = relation_get('user')
     password = relation_get('password')
     i = 0
-    if(host == None or port == None or user == None or password == None):
+    ifhost == None or port == None or user == None or password == None:
         exit
     else:
 
@@ -174,6 +173,8 @@ def  db_api_relation_changed():
             restart()
         except subprocess.CalledProcessError as err:
             log('Service restart failed with err: ' + err.message)
+
+
 if __name__ == '__main__':
     try:
         hooks.execute(sys.argv)
