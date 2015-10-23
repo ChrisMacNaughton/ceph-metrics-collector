@@ -148,9 +148,8 @@ def db_api_relation_changed():
     port = relation_get('port')
     user = relation_get('user')
     password = relation_get('password')
-    i = 0
-    if host == None or port == None or user == None or password == None:
-        exit
+    if host is None or port is None or user is None or password is None:
+        sys.exit()
     else:
 
         influx = {
