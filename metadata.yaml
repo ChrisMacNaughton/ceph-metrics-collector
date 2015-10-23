@@ -18,9 +18,10 @@ requires:
     scope: container
   elasticsearch:
     interface: elasticsearch
-  cabs:
-    interface: http
   stats:
     interface: statsd
   db-api:
     interface: influxdb-api
+provides:
+  collector:
+    interface: cabs-metrics

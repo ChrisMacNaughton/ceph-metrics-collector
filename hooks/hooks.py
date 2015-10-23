@@ -123,21 +123,22 @@ def restart():
         log('Service restart failed with err: ' + err.message)
 
 
-@hooks.hook('cabs-relation-changed')
-def cabs_relation_changed():
+@hooks.hook('collector-relation-changed')
+def collector_relation_changed():
     host = relation_get('hostname')
     port = relation_get('port')
 
     # Check the list length so pop doesn't fail
     if host is None or port is None:
+        log('host or port is none')
         return
     else:
         try:
-            hostname = subprocess.check_output(['hostname', '-f']).replace('.', '_')
+            hostname = subprocess.check_output(['hostname', '-f']).replace('.', '_').rstrip('\n')
             unit_num = local_unit().split('/')
             log("local_unit: " + str(unit_num))
             root_key = "unit-{charm_name}-{unit_num}.{hostname}".format(charm_name="ceph-metrics-collector",
-                                                                        unit_num="",
+                                                                        unit_num=unit_num[1],
                                                                         hostname=hostname)
 
             carbon = {
