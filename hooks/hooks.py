@@ -149,8 +149,7 @@ def db_api_relation_changed():
     user = relation_get('user')
     password = relation_get('password')
     if host is None or port is None or user is None or password is None:
-        log('missing configuration for influxdb')
-        sys.exit(0)
+        sys.exit()
     else:
 
         influx = {
