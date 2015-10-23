@@ -5,7 +5,7 @@ import setup
 
 setup.pre_install()
 from charmhelpers.core.hookenv import Hooks, UnregisteredHookError, log, relation_get, related_units, status_set, \
-    is_leader
+    is_leader, local_unit
 from charmhelpers.core.host import service_restart, service_stop, service_start
 import os
 import sys
@@ -125,14 +125,31 @@ def restart():
 
 @hooks.hook('cabs-relation-changed')
 def cabs_relation_changed():
-    cabs_host_list = []
-    for member in related_units():
-        cabs_host_list.append(relation_get('private-address', member))
+    host = relation_get('hostname')
+    port = relation_get('port')
+
     # Check the list length so pop doesn't fail
-    if len(cabs_host_list) > 0:
-        server = cabs_host_list[0]
-        update_service_config(service_dict={'outputs': ['carbon'], 'carbon': server + ":9000"})
-        restart()
+    if host is None or port is None:
+        return
+    else:
+        try:
+            hostname = subprocess.check_output(['hostname', '-f']).replace('.', '_')
+            unit_num = local_unit().split('/')
+            log("local_unit: " + str(unit_num))
+            root_key = "unit-{charm_name}-{unit_num}.{hostname}".format(charm_name="ceph-metrics-collector",
+                                                                        unit_num="",
+                                                                        hostname=hostname)
+
+            carbon = {
+                'host': host,
+                'port': port,
+                'root_key': root_key
+            }
+
+            update_service_config(service_dict={'outputs': ['carbon'], 'carbon': carbon})
+            restart()
+        except subprocess.CalledProcessError as err:
+            log('Service restart failed with err: ' + err.message)
 
 
 @hooks.hook('carbon-relation-changed')
@@ -150,7 +167,7 @@ def db_api_relation_changed():
     password = relation_get('password')
     if host is None or port is None or user is None or password is None:
         log('missing configuration for influxdb')
-        sys.exit(0)
+        return
     else:
 
         influx = {
