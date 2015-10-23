@@ -16,6 +16,7 @@ from charmhelpers.core.host import mkdir
 
 
 def setup_upstart_jobs():
+    hookenv.log('setting up upstart jobs')
     working_dir = os.getcwd()
     charm_upstart_conf = "/var/lib/charm/{}/upstart.conf".format(service_name())
     mkdir(os.path.dirname(charm_upstart_conf))
@@ -34,7 +35,10 @@ def setup_upstart_jobs():
 
 def install():
     hookenv.log('Installing ceph-metrics-collector')
+    setup_upstart_jobs()
     fetch.apt_update()
     fetch.apt_install(fetch.filter_installed_packages(
-        ['collectd', 'collectd-utils', 'libpcap-dev', 'python-netifaces']))
-    setup_upstart_jobs()
+       ['libpcap-dev', 'python-netifaces']))
+
+if __name__ == "__main__":
+    install()
