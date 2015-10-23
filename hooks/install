@@ -39,3 +39,6 @@ def install():
     fetch.apt_update()
     fetch.apt_install(fetch.filter_installed_packages(
        ['libpcap-dev', 'python-netifaces']))
+
+if __name__ == "__main__":
+    install()

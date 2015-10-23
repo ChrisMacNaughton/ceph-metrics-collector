@@ -149,7 +149,7 @@ def db_api_relation_changed():
     user = relation_get('user')
     password = relation_get('password')
     i = 0
-    ifhost == None or port == None or user == None or password == None:
+    if host == None or port == None or user == None or password == None:
         exit
     else:
 
