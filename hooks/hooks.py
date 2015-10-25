@@ -4,8 +4,17 @@ import requests
 import setup
 
 setup.pre_install()
-from charmhelpers.core.hookenv import Hooks, UnregisteredHookError, log, relation_get, related_units, status_set, \
-    is_leader, local_unit
+from charmhelpers.core.hookenv import (
+    Hooks,
+    UnregisteredHookError,
+    log,
+    relation_get,
+    related_units,
+    status_set,
+    is_leader,
+    local_unit,
+    relations_of_type,
+)
 from charmhelpers.core.host import service_restart, service_stop, service_start
 import os
 import sys
@@ -133,13 +142,16 @@ def collector_relation_changed():
         log('host or port is none')
         return
     else:
+        relation_data = hookenv.relations_of_type('ceph')
+        if not relation_data:
+            return
         try:
             hostname = subprocess.check_output(['hostname', '-f']).replace('.', '_').rstrip('\n')
-            unit_num = local_unit().split('/')
-            log("local_unit: " + str(unit_num))
-            root_key = "unit-{charm_name}-{unit_num}.{hostname}".format(charm_name="ceph-metrics-collector",
-                                                                        unit_num=unit_num[1],
-                                                                        hostname=hostname)
+            relation = relation_data[0]["__unit__"]
+            unit_tag = "unit-{0}".format(relation.replace('/', '-'))
+            log("unit_tag: " + str(unit_tag))
+            root_key = "{unit_tag}.{hostname}.ceph".format(unit_tag=unit_tag,
+                                                           hostname=hostname)
 
             carbon = {
                 'host': host,

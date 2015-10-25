@@ -11,10 +11,7 @@ tags:
 subordinate: true
 requires:
   ceph:
-    interface: client
-    scope: container
-  juju-info:
-    interface: juju-info
+    interface: ceph-client
     scope: container
   elasticsearch:
     interface: elasticsearch
