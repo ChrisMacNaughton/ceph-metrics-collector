@@ -12,7 +12,6 @@ from charmhelpers.core.hookenv import (
     related_units,
     status_set,
     is_leader,
-    local_unit,
     relations_of_type,
 )
 from charmhelpers.core.host import service_restart, service_stop, service_start
@@ -142,7 +141,7 @@ def collector_relation_changed():
         log('host or port is none')
         return
     else:
-        relation_data = hookenv.relations_of_type('ceph')
+        relation_data = relations_of_type('ceph')
         if not relation_data:
             return
         try:
