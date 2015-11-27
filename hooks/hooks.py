@@ -8,7 +8,7 @@ from charmhelpers.core.hookenv import (
     Hooks,
     UnregisteredHookError,
     log,
-    relation_get,
+    relation_get, config,
     related_units,
     status_set,
     is_leader,
@@ -93,7 +93,13 @@ def update_service_config(service_dict):
 
 @hooks.hook('config-changed')
 def config_changed():
-    restart()
+    if config('influx_host') != '':
+        host = config('influx_host')
+        port = config('influx_port')
+        user = config('influx_user')
+        password = config('influx_password')
+        setup_influx(host, port, user, password)
+        restart()
 
 
 @hooks.hook('start')
@@ -171,7 +177,7 @@ def carbon_relation_changed():
     restart()
 
 
-@hooks.hook(' db-api-relation-changed')
+@hooks.hook('db-api-relation-changed')
 def db_api_relation_changed():
     host = relation_get('hostname')
     port = relation_get('port')
@@ -180,28 +186,27 @@ def db_api_relation_changed():
     if host is None or port is None or user is None or password is None:
         return
     else:
+        setup_influx(host, port, user, password)
+        restart()
 
-        influx = {
-            'host': host,
-            'port': port,
-            'user': user,
-            'password': password
-        }
-        if is_leader():
-            query = 'create database "ceph"'
-            url = 'http://{}:{}/query?q={}'.format(influx['host'], influx['port'], query)
-            log("Setting up ceph database using {}".format(url))
-            requests.get(url)
-            query = 'CREATE RETENTION POLICY "one_week" ON "ceph" DURATION 7d REPLICATION 1 DEFAULT'
-            log("Setting up ceph database retention policy using {}".format(url))
-            url = 'http://{}:{}/query?q={}'.format(influx['host'], influx['port'], query)
-            requests.get(url)
-        update_service_config(service_dict={'outputs': ['influx'], 'influx': influx})
-        try:
-            restart()
-        except subprocess.CalledProcessError as err:
-            log('Service restart failed with err: ' + err.message)
 
+def setup_influx(host, port, user, password):
+    influx = {
+        'host': host,
+        'port': port,
+        'user': user,
+        'password': password
+    }
+    if is_leader():
+        query = 'create database "ceph"'
+        url = 'http://{}:{}/query?q={}'.format(influx['host'], influx['port'], query)
+        log("Setting up ceph database using {}".format(url))
+        requests.get(url)
+        query = 'CREATE RETENTION POLICY "one_week" ON "ceph" DURATION 7d REPLICATION 1 DEFAULT'
+        log("Setting up ceph database retention policy using {}".format(url))
+        url = 'http://{}:{}/query?q={}'.format(influx['host'], influx['port'], query)
+        requests.get(url)
+    update_service_config(service_dict={'outputs': ['influx'], 'influx': influx})
 
 if __name__ == '__main__':
     try:

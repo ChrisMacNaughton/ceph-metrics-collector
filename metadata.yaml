@@ -13,6 +13,9 @@ requires:
   ceph:
     interface: ceph-client
     scope: container
+  juju-info:
+    interface: juju-info
+    scope: container
   elasticsearch:
     interface: elasticsearch
   stats:

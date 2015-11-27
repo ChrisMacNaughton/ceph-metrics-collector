@@ -1,14 +1,17 @@
 options:
-  string-option:
+  influx_host:
     type: string
-    default: "Default Value"
-    description: "A short description of the configuration option"
-  boolean-option:
-    type: boolean
-    default: False
-    description: "A short description of the configuration option"
-  int-option:
-    type: int
-    default: 9001
-    description: "A short description of the configuration option"
-
+    default: ""
+    description: Hostname for InfluxDB, will be replaced if you add an influxdb relation
+  influx_port:
+    type: string
+    default: "8086"
+    description: Port for InfluxDB, will be replaced if you add an influxdb relation
+  influx_user:
+    type: string
+    default: root
+    description: user for InfluxDB, will be replaced if you add an influxdb relation
+  influx_password:
+    type: string
+    default: root
+    description: password for InfluxDB, will be replaced if you add an influxdb relation
