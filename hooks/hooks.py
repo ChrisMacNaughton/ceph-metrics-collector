@@ -184,10 +184,11 @@ def db_api_relation_changed():
     user = relation_get('user')
     password = relation_get('password')
     if host is None or port is None or user is None or password is None:
+        log("Do not have the configuration for InfluxDB")
         return
-    else:
-        setup_influx(host, port, user, password)
-        restart()
+
+    setup_influx(host, port, user, password)
+    restart()
 
 
 def setup_influx(host, port, user, password):
