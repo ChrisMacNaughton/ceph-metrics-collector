@@ -30,13 +30,6 @@ hooks = Hooks()
 config_file = '/etc/default/decode_ceph.yaml'
 
 
-def juju_header():
-    header = ("#-------------------------------------------------#\n"
-              "# This file is Juju managed - do not edit by hand #\n"
-              "#-------------------------------------------------#\n")
-    return header
-
-
 # TODO: Unit test this
 # Takes 2 dictionaries and combines their key/values with a unique set of outputs list
 def combine_dicts(a, b):
@@ -108,10 +101,6 @@ def start():
         service_start('decode_ceph')
     except subprocess.CalledProcessError as err:
         log('Service restart failed with err: ' + err.message)
-    try:
-        service_start('ceph_monitor')
-    except subprocess.CalledProcessError as err:
-        log('Service restart failed with err: ' + err.message)
 
 
 @hooks.hook('stop')
@@ -120,19 +109,11 @@ def stop():
         service_stop('decode_ceph')
     except subprocess.CalledProcessError as err:
         log('Service restart failed with err: ' + err.message)
-    try:
-        service_stop('ceph_monitor')
-    except subprocess.CalledProcessError as err:
-        log('Service restart failed with err: ' + err.message)
 
 
 def restart():
     try:
         service_restart('decode_ceph')
-    except subprocess.CalledProcessError as err:
-        log('Service restart failed with err: ' + err.message)
-    try:
-        service_restart('ceph_monitor')
     except subprocess.CalledProcessError as err:
         log('Service restart failed with err: ' + err.message)
 
@@ -208,6 +189,7 @@ def setup_influx(host, port, user, password):
         url = 'http://{}:{}/query?q={}'.format(influx['host'], influx['port'], query)
         requests.get(url)
     update_service_config(service_dict={'outputs': ['influx'], 'influx': influx})
+
 
 if __name__ == '__main__':
     try:

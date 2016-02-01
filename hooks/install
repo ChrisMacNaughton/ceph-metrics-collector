@@ -8,7 +8,6 @@ import setup
 
 setup.pre_install()
 
-from charmhelpers import fetch
 from charmhelpers.core import hookenv
 from charmhelpers.core.hookenv import service_name, log
 from charmhelpers.core.templating import render
@@ -16,29 +15,24 @@ from charmhelpers.core.host import mkdir
 
 
 def setup_upstart_jobs():
-    hookenv.log('setting up upstart jobs')
+    hookenv.log('setting up upstart job')
     working_dir = os.getcwd()
-    charm_upstart_conf = "/var/lib/charm/{}/upstart.conf".format(service_name())
+    charm_upstart_conf = "/var/lib/charm/{}/upstart.conf".format(
+        service_name())
     mkdir(os.path.dirname(charm_upstart_conf))
-    context = {'decoder_path': '{}/hooks/decode_ceph'.format(working_dir), 'name': 'ceph-metrics-collector'}
+    context = {'decoder_path': '{}/hooks/admin_ceph'.format(working_dir),
+               'decoder_options': '/etc/default/decode_ceph.yaml',
+               'name': 'decode_ceph'}
 
     render('upstart.conf', charm_upstart_conf, context, perms=0o644)
-    log('copying {} to /etc/init'.format(charm_upstart_conf))
+    log('copying {} to /etc/init/admin_ceph.conf'.format(charm_upstart_conf))
     shutil.copy(charm_upstart_conf, '/etc/init/decode_ceph.conf')
-
-    context = {'decoder_path': '{}/hooks/ceph_monitor'.format(working_dir), 'name': 'ceph-monitor'}
-
-    render('upstart.conf', charm_upstart_conf, context, perms=0o644)
-    log('copying {} to /etc/init'.format(charm_upstart_conf))
-    shutil.copy(charm_upstart_conf, '/etc/init/ceph_monitor.conf')
 
 
 def install():
     hookenv.log('Installing ceph-metrics-collector')
     setup_upstart_jobs()
-    fetch.apt_update()
-    fetch.apt_install(fetch.filter_installed_packages(
-       ['libpcap-dev', 'python-netifaces']))
+
 
 if __name__ == "__main__":
     install()
