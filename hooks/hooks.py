@@ -88,7 +88,7 @@ def update_service_config(service_dict):
                 log('Overwriting service dict: ' + str(service_dict))
                 write_config(service_dict)
     except IOError as err:
-        log("IOError with /etc/decode.conf. " + err.message)
+        log("IOError with /etc/default/decode_ceph.yaml " + err.message)
 
 
 @hooks.hook('config-changed')

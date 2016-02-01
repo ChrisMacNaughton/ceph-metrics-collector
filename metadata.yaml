@@ -10,7 +10,7 @@ tags:
   - misc
 subordinate: true
 requires:
-  ceph:
+  ceph-mon:
     interface: ceph-client
     scope: container
   juju-info:
